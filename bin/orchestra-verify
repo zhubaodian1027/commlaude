@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd -- "$BIN_DIR/.." && pwd)"
+exec python3 -I "$ROOT/scripts/verify_install.py" "$@"

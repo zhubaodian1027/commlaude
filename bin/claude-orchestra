@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Start an isolated Claude Code backed by the local Magpie gateway.
+set -euo pipefail
+
+BIN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd -- "$BIN_DIR/.." && pwd)"
+CLAUDE_BIN="${CLAUDE_BIN:-/opt/homebrew/bin/claude}"
+
+if [[ ! -x "$CLAUDE_BIN" ]]; then
+  printf 'Claude Code not found at %s; set CLAUDE_BIN to its executable.\n' "$CLAUDE_BIN" >&2
+  exit 1
+fi
+
+export CLAUDE_CONFIG_DIR="$ROOT/.claude"
+export ANTHROPIC_BASE_URL="${MAGPIE_BASE_URL:-http://127.0.0.1:3425}"
+# The loopback gateway accepts local requests; this is a placeholder, not a secret.
+export ANTHROPIC_AUTH_TOKEN="magpie-local"
+export NO_PROXY="127.0.0.1,localhost,::1${NO_PROXY:+,$NO_PROXY}"
+export no_proxy="127.0.0.1,localhost,::1${no_proxy:+,$no_proxy}"
+
+# Do not inherit routing overrides from an existing Claude/Magpie environment.
+unset ANTHROPIC_API_KEY ANTHROPIC_MODEL ANTHROPIC_SMALL_FAST_MODEL
+unset ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
+unset ANTHROPIC_DEFAULT_HAIKU_MODEL ANTHROPIC_DEFAULT_FABLE_MODEL
+unset CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_SIMPLE CLAUDE_CODE_SAFE_MODE
+
+# Keep the Auto Mode permission classifier independent of main-model selection.
+# The isolated settings.json carries the same values because this version reads
+# the classifier from user settings even when --settings supplies an override.
+export CLAUDE_CODE_AUTO_MODE_MODEL="group/role-auto-mode"
+export CLAUDE_CODE_AUTO_MODE_SERVER=0
+
+MAIN_MODEL="${ORCHESTRA_MAIN_MODEL:-group/role-communicator}"
+EFFORT="${ORCHESTRA_EFFORT:-high}"
+
+exec "$CLAUDE_BIN" \
+  --model "$MAIN_MODEL" \
+  --effort "$EFFORT" \
+  --setting-sources user \
+  --strict-mcp-config \
+  "$@"
