@@ -13,8 +13,7 @@ ROOT = Path(__file__).resolve().parent.parent
 AGENTS = {
     "astra-architect": "group/role-architect",
     "kimi-supervisor": "group/role-supervisor",
-    "worker-deepseek": "group/role-worker-code",
-    "worker-hydrogen": "group/role-worker-long",
+    "worker": "group/role-worker-code",
 }
 REQUIRED = [
     *(ROOT / ".claude/agents" / f"{name}.md" for name in AGENTS),
@@ -59,6 +58,11 @@ def main() -> int:
         path = ROOT / ".claude/commands" / obsolete
         if path.exists():
             errors.append(f"obsolete command still present: {path.relative_to(ROOT)}")
+
+    for obsolete_agent in ("worker-deepseek.md", "worker-hydrogen.md"):
+        path = ROOT / ".claude/agents" / obsolete_agent
+        if path.exists():
+            errors.append(f"obsolete agent still present: {path.relative_to(ROOT)}")
 
     for name, model in AGENTS.items():
         path = ROOT / ".claude/agents" / f"{name}.md"

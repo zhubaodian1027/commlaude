@@ -6,7 +6,7 @@ Audit date: 2026-11-21 (public-release readiness check).
 
 - Removed local OS usernames, hardcoded user-home paths, and personal workspace paths from publishable source and documentation. Scripts derive their installation root dynamically; documentation uses relative paths or generic placeholders.
 - Scrubbed machine-specific operational traces from `docs/VERIFICATION.md`: removed local rollback snapshot timestamps, local `.smoke/` run timestamps, local shell backup filenames, unrelated local Magpie group names, and local shell environment details.
-- Decoupled `README.md` from personal model/provider choices and schedules, documenting the six semantic `group/role-*` groups by capability profile instead.
+- Decoupled `README.md` from personal model/provider choices and schedules, documenting the five semantic `group/role-*` groups by capability profile instead.
 - Enforced a strict `.claude/*` whitelist in `.gitignore`: everything directly under `.claude/` is ignored except authored `agents/`, `commands/`, and `skills/`.
 - Excluded `.smoke/`, `.orchestra/`, `logs/`, `backups/`, `.DS_Store`, and `.magpie-setup-state`.
 - No API key, access token, private key, session key, personal email address, URL-embedded credential, non-loopback IP, or personal absolute path was found in any publishable file.
@@ -24,7 +24,7 @@ Audit date: 2026-11-21 (public-release readiness check).
 ## Published content and intentional operational metadata
 
 - `bin/claude-orchestra` sets `ANTHROPIC_BASE_URL` to loopback `http://127.0.0.1:3425` and `ANTHROPIC_AUTH_TOKEN="magpie-local"`, which is a documented non-secret placeholder for the local gateway.
-- `setup-magpie.sh` and `PLAN.md` retain reference Magpie provider/model IDs as customizable defaults (all six groups in `setup-magpie.sh` can be overridden via `ROLE_*_MODELS` environment variables). These are configuration identifiers, not credentials.
+- `setup-magpie.sh` and `PLAN.md` retain reference Magpie provider/model IDs as customizable defaults (all five groups in `setup-magpie.sh` can be overridden via `ROLE_*_MODELS` environment variables). These are configuration identifiers, not credentials.
 
 ## Method and limits
 

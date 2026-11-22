@@ -1,6 +1,6 @@
 ---
 name: model-orchestra
-description: Full four-tier multi-model orchestration workflow (Neon Hub, Astra Architect, Kimi Supervisor, DeepSeek/Hydrogen Workers). Use for /commlaude, complex features, major refactors, and research-to-code tasks requiring explicit architecture approval, execution, and independent review.
+description: Full four-tier multi-model orchestration workflow (Neon Hub, Astra Architect, Kimi Supervisor, Worker). Use for /commlaude, complex features, major refactors, and research-to-code tasks requiring explicit architecture approval, execution, and independent review.
 ---
 
 # Model Orchestra
@@ -13,7 +13,7 @@ Do not use this heavyweight workflow for a simple question or a trivial edit. Do
 
 1. Resolve material ambiguities with concise user questions. Use sensible defaults for details that do not change the design.
 2. Create `.orchestra/<YYYYMMDD-HHMMSS>-<slug>/00-brief.md` with the goal, repository context, constraints, non-goals, and testable done criteria.
-3. For a large or unfamiliar codebase, invoke `worker-hydrogen` in Scout Mode. Append its concise map to the brief; do not paste unfiltered repository dumps into the architect prompt.
+3. For a large or unfamiliar codebase, invoke `worker` in Scout Mode. Append its concise map to the brief; do not paste unfiltered repository dumps into the architect prompt.
 
 ## Phase 2 — Architect
 

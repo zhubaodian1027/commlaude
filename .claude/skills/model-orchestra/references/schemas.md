@@ -52,7 +52,7 @@ Preserve Astra's five sections verbatim under a clearly separated orchestration 
     {
       "id": "T01",
       "title": "Implement a focused unit",
-      "assignee": "worker-deepseek",
+      "assignee": "worker",
       "depends_on": [],
       "allowed_files": ["src/unit.py", "tests/test_unit.py"],
       "instructions": "Exact behavior and constraints.",
@@ -65,7 +65,7 @@ Preserve Astra's five sections verbatim under a clearly separated orchestration 
 Rules:
 
 - IDs are unique and match `^T[0-9]{2,}$`.
-- `assignee` is `worker-deepseek` or `worker-hydrogen`.
+- `assignee` is `worker`.
 - Dependencies refer to earlier or existing task IDs and contain no cycles.
 - `allowed_files` is exhaustive; independent tasks in the same wave have disjoint paths.
 - `verification_cmd` is a concrete executable command, not prose.

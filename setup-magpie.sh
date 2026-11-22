@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MAGPIE="${MAGPIE:-/Applications/Magpie.app/Contents/MacOS/magpie}"
 STATE="$ROOT/.magpie-setup-state"
-ROLE_GROUPS=(role-communicator role-architect role-supervisor role-worker-code role-worker-long role-auto-mode)
+ROLE_GROUPS=(role-communicator role-architect role-supervisor role-worker-code role-auto-mode)
 
 if [[ ! -x "$MAGPIE" ]]; then
   printf 'Magpie not found at %s; set MAGPIE to its executable.\n' "$MAGPIE" >&2
@@ -29,17 +29,16 @@ if [[ ! -f "$STATE" ]]; then
   umask 077
   printf 'profile=%s\ncreated_at=%s\n' "$PROFILE" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >"$STATE"
 else
-  printf 'Existing setup state found; refreshing only the six orchestra groups.\n'
+  printf 'Existing setup state found; refreshing only the five orchestra groups.\n'
 fi
 
-# Reference defaults for the six semantic role groups. Override any group via
+# Reference defaults for the five semantic role groups. Override any group via
 # environment variables (comma-separated model IDs in priority order) to adapt
 # to your own provider/model pool without editing agents or skills.
 ROLE_COMMUNICATOR_MODELS="${ROLE_COMMUNICATOR_MODELS:-agy-cli/gemini-4-neon,agy-cli/claude-sonnet-5-5}"
 ROLE_ARCHITECT_MODELS="${ROLE_ARCHITECT_MODELS:-codex/gpt-6.2-astra:xhigh,codex/gpt-6.2-sol:high,agy-cli/claude-opus-5-5}"
 ROLE_SUPERVISOR_MODELS="${ROLE_SUPERVISOR_MODELS:-kimi/k3.1-pro,agy-cli/gemini-4-neon,agy-cli/claude-opus-5-5}"
 ROLE_WORKER_CODE_MODELS="${ROLE_WORKER_CODE_MODELS:-agy-cli/gemini-4-hydrogen,deepseek/deepseek-flash}"
-ROLE_WORKER_LONG_MODELS="${ROLE_WORKER_LONG_MODELS:-agy-cli/gemini-4-hydrogen,deepseek/deepseek-flash}"
 ROLE_AUTO_MODE_MODELS="${ROLE_AUTO_MODE_MODELS:-deepseek/deepseek-flash,zcode/GLM-5.3-Flash}"
 
 "$MAGPIE" group add role-communicator \
@@ -56,10 +55,6 @@ ROLE_AUTO_MODE_MODELS="${ROLE_AUTO_MODE_MODELS:-deepseek/deepseek-flash,zcode/GL
 
 "$MAGPIE" group add role-worker-code \
   "models=$ROLE_WORKER_CODE_MODELS" \
-  routing=order stays=auto
-
-"$MAGPIE" group add role-worker-long \
-  "models=$ROLE_WORKER_LONG_MODELS" \
   routing=order stays=auto
 
 "$MAGPIE" group add role-auto-mode \

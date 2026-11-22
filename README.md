@@ -39,7 +39,7 @@ Claude Code 子代理不能递归派生子代理，这也恰好避免了失控�
 
 ### 4. 泛化优先，路由与编排彻底解耦
 
-模型生态迭代极快。只要在路由层维护 6 个语义角色组（`group/role-*`），你随时可以：
+模型生态迭代极快。只要在路由层维护 5 个语义角色组（`group/role-*`），你随时可以：
 
 - 替换任意角色的底层模型或供应商，而不改一行提示词；
 - 为每个角色配置有序回退链（`routing=order`），配额耗尽或上游异常时自动切换；
@@ -65,9 +65,9 @@ Claude Code 子代理不能递归派生子代理，这也恰好避免了失控�
               ┌───────────────┘          │          └───────────────┐
               ▼                          ▼                          ▼
 ┌───────────────────────────┐ ┌───────────────────────┐ ┌───────────────────────────┐
-│ L2 Architect (只读规划)    │ │ L3 Supervisor (写审分离)│ │ L4 Workers (限定范围执行)   │
+│ L2 Architect (只读规划)    │ │ L3 Supervisor (写审分离)│ │ L4 Worker (限定范围执行)    │
 │ group/role-architect      │ │ group/role-supervisor │ │ group/role-worker-code    │
-│ 第一性原理 · 双方案蓝图     │ │ 任务拆解 · 独立测审    │ │ group/role-worker-long    │
+│ 第一性原理 · 双方案蓝图     │ │ 任务拆解 · 独立测审    │ │ 编码 · 测试 · 侦察 · 文档   │
 └───────────────────────────┘ └───────────────────────┘ └───────────────────────────┘
 
 独立权限分类旁路：Auto Mode ──► group/role-auto-mode（不跟随主会话模型漂移）
@@ -77,15 +77,14 @@ Claude Code 子代理不能递归派生子代理，这也恰好避免了失控�
 
 ## 语义角色组与能力画像
 
-编排层只认以下 6 个语义路由组，不预设任何特定模型。你可以根据自己可用的模型池，按能力画像自由填入首选与回退链：
+编排层只认以下 5 个语义路由组，不预设任何特定模型。你可以根据自己可用的模型池，按能力画像自由填入首选与回退链：
 
 | 角色层 | 语义路由组 | 权限边界 | 推荐能力画像（Model-Agnostic） | 默认路由策略 |
 |---|---|---|---|---|
 | **L1 沟通中枢** | `group/role-communicator` | 主会话编排 | 沟通自然、上下文理解强、擅长总结转译与多步协作 | `routing=order` `stays=session` |
 | **L2 架构师** | `group/role-architect` | 只读（检索/调研） | 高深度推理、第一性原理建模、复杂架构与难题诊断 | `routing=order` `stays=session` |
 | **L3 拆解与审查** | `group/role-supervisor` | 只读 + Bash 测试 | 任务分解严谨、边界条件敏感、擅长严格代码审查 | `routing=order` `stays=session` |
-| **L4a 编码 Worker** | `group/role-worker-code` | 读写 + 测试 | 高性价比、响应快、逻辑与代码实现准确 | `routing=order` `stays=auto` |
-| **L4b 长上下文 Worker** | `group/role-worker-long` | 读写 + 侦察/文档 | 长上下文稳定、适合代码库侦察、多文件机械修改与文档 | `routing=order` `stays=auto` |
+| **L4 执行 Worker** | `group/role-worker-code` | 读写 + 测试 + 只读侦察 | 高性价比、响应快、代码实现准确且兼顾长上下文侦察与文档 | `routing=order` `stays=auto` |
 | **Auto Mode 分类器** | `group/role-auto-mode` | 权限安全分类 | 极低延迟、低成本、适合高频无状态权限判定 | `routing=order` `stays=off` |
 
 > **关于命名说明**：目录中的命令名（`/astra`、`/kimi`、`/worker`、`/commlaude`）与子代理文件名（`.claude/agents/*.md`）是参考实现沿用的语义槽位标识；实际路由完全由 `group/role-*` 决定，不限定任何具体模型。
@@ -99,7 +98,7 @@ Claude Code 子代理不能递归派生子代理，这也恰好避免了失控�
 | 入口 | 协作路径 | 适用场景 | 关键约束 |
 |---|---|---|---|
 | `/astra <问题>` | `User ↔ L1 ↔ L2` | 架构讨论、难题诊断、第一性原理头脑风暴 | 只读，不改代码 |
-| `/worker <小型明确任务>` | `User ↔ L1 → 单 L4` | 边界清晰的小改动、代码侦察、补测试、改文档 | 单 Worker 直通，**无独立审查** |
+| `/worker <小型明确任务>` | `User ↔ L1 → 单 L4` | 边界清晰的改代码/修 Bug、补测试、改文档或只读侦察 | 直连 `group/role-worker-code`（默认可读写执行，侦察时走只读 Scout Mode），**无独立审查** |
 | `/kimi <明确任务>` | `User ↔ L1 → L3 → L4 → L3` | 设计已经清楚的功能实现、缺陷修复、范围重构 | 跳过架构阶段，保留独立测试与审查 |
 | `/commlaude <复杂任务>` | `User ↔ L1 ↔ L2 → [人工审批] → L3 ↔ L4` | 复杂特性、大型重构、方案不确定的研发任务 | **架构经人明确批准后才写代码**，最多 2 轮修订 |
 
@@ -124,7 +123,7 @@ Claude Code 子代理不能递归派生子代理，这也恰好避免了失控�
 - 已安装并运行本地 Magpie 网关（默认监听 `http://127.0.0.1:3425`，或任意支持分组路由的 Anthropic 兼容本地网关）。
 - Python 3（仅使用标准库，无第三方依赖）。
 
-### 1. 创建六个语义角色组
+### 1. 创建五个语义角色组
 
 `setup-magpie.sh` 内置了一组参考映射，你可以直接通过环境变量传入自己手头的模型列表（逗号分隔，按优先级排序），无需改动脚本本身：
 
@@ -133,7 +132,6 @@ ROLE_COMMUNICATOR_MODELS="<primary>,<fallback>" \
 ROLE_ARCHITECT_MODELS="<primary>,<fallback>" \
 ROLE_SUPERVISOR_MODELS="<primary>,<fallback>" \
 ROLE_WORKER_CODE_MODELS="<primary>,<fallback>" \
-ROLE_WORKER_LONG_MODELS="<primary>,<fallback>" \
 ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
 ./setup-magpie.sh
 ```
@@ -143,7 +141,7 @@ ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
 脚本会自动完成以下安全措施：
 
 1. 首次运行时自动保存带时间戳的 Magpie 回滚快照，快照名仅记录在本目录被 git 忽略的 `.magpie-setup-state`。
-2. 仅创建六个 `group/role-*` 路由组；若发现同名组已存在且非本安装创建，会拒绝覆盖并退出。
+2. 仅创建五个 `group/role-*` 路由组；若发现同名组已存在且非本安装创建，会拒绝覆盖并退出。
 3. **不会修改**现有的 Magpie 主模型、四个 tier 或全局 subagent 绑定。
 
 ### 2. 启动隔离环境
@@ -211,7 +209,7 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 ./scripts/routing_smoke_test.sh
 ```
 
-测试产物写入本目录被忽略的 `.smoke/`，并验证主会话与四个子代理角色组是否都真实发出请求。
+测试产物写入本目录被忽略的 `.smoke/`，并验证主会话与三个子代理角色组是否都真实发出请求。
 
 ### 模型归因审计
 
@@ -255,7 +253,7 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 ./uninstall.sh --yes
 ```
 
-同时删除六个由本安装创建的 `group/role-*` 路由组：
+同时删除五个由本安装创建的 `group/role-*` 路由组：
 
 ```bash
 ./uninstall.sh --yes --magpie

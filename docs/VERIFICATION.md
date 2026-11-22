@@ -1,13 +1,13 @@
 # Verification Log
 
-> Entry points were renamed after the initial functional tests: `/council` → `/astra`, `/delegate` → `/kimi`, and `/orchestra` → `/commlaude`. A direct `/worker` path was added at the same time. Historical headings below refer to the names used during the tests.
+> Entry points were renamed after the initial functional tests: `/council` → `/astra`, `/delegate` → `/kimi`, and `/orchestra` → `/commlaude`. A direct `/worker` path was added at the same time, and L4 workers were later consolidated into a single `worker` subagent on `group/role-worker-code` (removing the redundant `role-worker-long` group). Historical headings below refer to the names used during the original tests.
 
 ## Static and bootstrap checks
 
 - `bin/orchestra-verify`: passed required-file checks, direct `group/role-*` bindings, read-only tool restrictions, and shell syntax checks.
 - Python unit tests: all tests passed, covering current/legacy usage records, Claude/local-role filtering, timestamp normalization, variable-width ISO fractional seconds, and launcher Auto Mode pinning.
 - `bin/claude-orchestra --version`: verified isolated launcher execution against Claude Code `2.1.311`.
-- `uninstall.sh --dry-run --magpie`: selected only current-directory installation paths, the marked shell alias block, and the six installation-owned role groups; no global Claude files or Magpie bindings selected.
+- `uninstall.sh --dry-run --magpie`: selected only current-directory installation paths, the marked shell alias block, and the five installation-owned role groups; no global Claude files or Magpie bindings selected.
 - Historical usage audit: parsed Magpie's variable-width fractional timestamps without skipped-record warnings.
 - Live connectivity: an isolated print-mode request returned `OK` through `http://127.0.0.1:3425` with `is_error: false`. Claude Code emits `unrecognized_model` telemetry for custom/group IDs, but requests complete normally.
 

@@ -15,7 +15,7 @@ Each task must contain:
 
 - `id`: `T01`, `T02`, ...
 - `title`: short action-oriented title
-- `assignee`: `worker-deepseek` for focused code, algorithms, and tests; `worker-hydrogen` for large-context reconnaissance, multi-file mechanical edits, and documentation
+- `assignee`: `worker` (bound to `group/role-worker-code`, handling code, bug fixes, tests, multi-file edits, documentation, and read-only scouting)
 - `depends_on`: array of task IDs
 - `allowed_files`: exhaustive files the worker may create or modify
 - `instructions`: precise implementation steps and constraints
