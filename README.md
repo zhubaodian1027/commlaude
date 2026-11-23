@@ -229,10 +229,13 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 - Connects to local loopback `http://127.0.0.1:3425` with the documented non-secret placeholder token `magpie-local`.
 - Unsets inherited `CLAUDE_CODE_SUBAGENT_MODEL`, `ANTHROPIC_MODEL`, and global model overrides so subagent routing stays isolated.
 - Pins Auto Mode classification to `group/role-auto-mode` with `CLAUDE_CODE_AUTO_MODE_SERVER=0`.
+- Automatically symlinks global user skills from `~/.claude/skills/` into `.claude/skills/` (never overriding the 5 built-in skills, pruning stale links automatically, and kept gitignored).
 
 Optional overrides at launch time:
 - `ORCHESTRA_MAIN_MODEL` (default: `group/role-communicator`)
 - `ORCHESTRA_EFFORT` (default: `high`)
+- `ORCHESTRA_INHERIT_SKILLS` (default: `1`; set to `0` to disable global skill bridging and remove bridged symlinks)
+- `ORCHESTRA_GLOBAL_SKILLS_DIR` (default: `~/.claude/skills`)
 - `MAGPIE_BASE_URL` (default: `http://127.0.0.1:3425`)
 - `CLAUDE_BIN` (default: `/opt/homebrew/bin/claude`)
 

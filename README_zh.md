@@ -228,11 +228,14 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 - 将 `CLAUDE_CONFIG_DIR` 固定指向本仓库的 `.claude/`；
 - 直连本机网关 `http://127.0.0.1:3425`（使用非机密本地占位令牌 `magpie-local`）；
 - 清除继承的 `CLAUDE_CODE_SUBAGENT_MODEL`、`ANTHROPIC_MODEL` 等全局路由覆盖，防止干扰子代理路由；
-- 将 Auto Mode 分类器锁定到 `group/role-auto-mode`（`CLAUDE_CODE_AUTO_MODE_SERVER=0`）。
+- 将 Auto Mode 分类器锁定到 `group/role-auto-mode`（`CLAUDE_CODE_AUTO_MODE_SERVER=0`）；
+- 以软链接方式自动桥接全局 `~/.claude/skills/` 中的个人 Skill（不覆盖内置 5 个编排 Skill，失效软链接自动清理，且被 `.gitignore` 排除）。
 
 可选启动环境变量：
 - `ORCHESTRA_MAIN_MODEL`：默认 `group/role-communicator`
 - `ORCHESTRA_EFFORT`：默认 `high`
+- `ORCHESTRA_INHERIT_SKILLS`：默认 `1`（设为 `0` 可禁用全局 Skill 桥接并清理已桥接软链接）
+- `ORCHESTRA_GLOBAL_SKILLS_DIR`：默认 `~/.claude/skills`
 - `MAGPIE_BASE_URL`：默认 `http://127.0.0.1:3425`
 - `CLAUDE_BIN`：默认 `/opt/homebrew/bin/claude`
 

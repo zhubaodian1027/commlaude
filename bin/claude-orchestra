@@ -13,6 +13,54 @@ fi
 
 export CLAUDE_CONFIG_DIR="$ROOT/.claude"
 export ANTHROPIC_BASE_URL="${MAGPIE_BASE_URL:-http://127.0.0.1:3425}"
+
+sync_global_skills() {
+  local skills_dir="$CLAUDE_CONFIG_DIR/skills"
+  local global_dir="${ORCHESTRA_GLOBAL_SKILLS_DIR:-$HOME/.claude/skills}"
+  local inherit=1
+  local link target entry name dest real_global real_skills
+
+  case "${ORCHESTRA_INHERIT_SKILLS:-1}" in
+    0|false|FALSE|no|NO|off|OFF) inherit=0 ;;
+  esac
+
+  while [[ "$global_dir" == */ && "$global_dir" != "/" ]]; do
+    global_dir="${global_dir%/}"
+  done
+  [[ -n "$global_dir" && "$global_dir" != "/" ]] || return 0
+  [[ -d "$skills_dir" ]] || mkdir -p "$skills_dir"
+
+  if [[ -d "$global_dir" ]]; then
+    real_global="$(cd -- "$global_dir" 2>/dev/null && pwd -P || true)"
+    real_skills="$(cd -- "$skills_dir" 2>/dev/null && pwd -P || true)"
+    [[ -n "$real_global" && "$real_global" == "$real_skills" ]] && return 0
+  fi
+
+  # Prune stale bridged symlinks (or all bridged symlinks when disabled).
+  for link in "$skills_dir"/*; do
+    [[ -L "$link" ]] || continue
+    target="$(readlink "$link" || true)"
+    if [[ "$target" == "$global_dir/"* ]]; then
+      if [[ "$inherit" -eq 0 || ! -d "$target" ]]; then
+        rm -f -- "$link"
+      fi
+    fi
+  done
+
+  [[ "$inherit" -eq 0 || ! -d "$global_dir" ]] && return 0
+
+  # Bridge global user skills as symlinks without overriding built-in or manual entries.
+  for entry in "$global_dir"/*; do
+    [[ -d "$entry" ]] || continue
+    name="$(basename -- "$entry")"
+    dest="$skills_dir/$name"
+    if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+      ln -s -- "$entry" "$dest" 2>/dev/null || true
+    fi
+  done
+}
+
+sync_global_skills
 # The loopback gateway accepts local requests; this is a placeholder, not a secret.
 export ANTHROPIC_AUTH_TOKEN="magpie-local"
 export NO_PROXY="127.0.0.1,localhost,::1${NO_PROXY:+,$NO_PROXY}"

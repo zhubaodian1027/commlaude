@@ -11,6 +11,12 @@ backups/
 !.claude/agents/
 !.claude/commands/
 !.claude/skills/
+.claude/skills/*
+!.claude/skills/model-orchestra/
+!.claude/skills/astra-council/
+!.claude/skills/fast-delegate/
+!.claude/skills/worker-direct/
+!.claude/skills/smart-worker-direct/
 
 # Python caches
 __pycache__/
