@@ -1,158 +1,105 @@
-# commlaude — Communication-First 的多模型 Claude Code
+<div align="center">
 
-这是一个运行在 Claude Code 之上、**目录完全隔离**的多模型角色协作环境。
+# commlaude
 
-它不是简单的“多接几个模型”，而是围绕两个核心工程理念构建：
+**A directory-isolated, communication-first multi-model orchestration layer for Claude Code.**
 
-1. **Communication 能力为中枢（Communication-First Hub）**
-   在复杂软件工程中，真正的瓶颈往往不是单次推理的上限，而是**意图对齐、上下文策展（Context Curation）、方案翻译与批判性把关、以及多步骤状态编排**。因此本架构将**沟通、理解与协调能力最强**的模型放在 L1 主会话中枢，统一面向人协作，并对内以扁平单层（Flat Hub-and-Spoke）方式调度专职角色。
-2. **角色抽象与模型解耦（Role-First, Model-Agnostic）**
-   所有子代理、技能、斜杠命令与启动脚本**只绑定语义角色组（`group/role-*`）**，不耦合任何具体厂商或具体模型。每个角色组由**能力画像**定义；背后实际接入哪些模型、故障如何回退、何时调整优先级，全部在路由层（如 Magpie）动态配置，编排层零改动。
+Route conversational coordination, read-only architecture, independent review, fast execution, parallel deep research, and Auto Mode classification to separate model groups — without touching `~/.claude` or existing Magpie bindings.
 
-> 本环境的所有配置、代理、技能、会话数据与运行产物都归当前目录管理，**不会修改全局 `~/.claude/` 配置或原有 Magpie 的主模型 / tier / subagent 绑定**。
+[![GitHub Stars](https://img.shields.io/github/stars/zhubaodian1027/commlaude?style=flat)](https://github.com/zhubaodian1027/commlaude/stargazers)
+![Claude Code](https://img.shields.io/badge/Claude%20Code-CLI-111827?style=flat)
+![Dependencies](https://img.shields.io/badge/Python-stdlib%20only-2563eb?style=flat)
+![Isolation](https://img.shields.io/badge/Config-Directory%20Isolated-059669?style=flat)
 
----
+**English** · [简体中文](./README_zh.md)
 
-## 核心设计理念
+[Quickstart](#60-second-quickstart) · [Why commlaude](#why-commlaude) · [Entry Points](#five-entry-points) · [Architecture](#architecture--role-groups) · [Verification](#verification--attribution) · [Uninstall](#uninstall--rollback)
 
-### 1. 单中枢扁平编排（Flat Hub-and-Spoke）
-
-Claude Code 子代理不能递归派生子代理，这也恰好避免了失控的多层代理套娃。L1 Communicator 是唯一的全局状态机编排者：
-
-- 负责与人澄清需求、提炼精简的 `00-brief.md`；
-- 必要时先派长上下文侦察角色绘制代码地图，**不把未经筛选的大段仓库直接倾倒给深度推理角色**；
-- 按拓扑依赖分波次派发任务，并控制审批闸门、修订轮次与升级边界。
-
-### 2. 声音隔离（Voice Isolation：“Thinker Thinks, Communicator Speaks”）
-
-不同角色的能力优势并不重合：深度推理/架构模型擅长第一性原理与极端边界分析，但直接输出往往冗长、保守或充满免责声明。
-
-- **L2 架构师**保持严格只读，只产出高密度结构化蓝图，并强制提供**激进第一性原理方案**与**稳健务实方案**对比；
-- **L1 沟通中枢**负责落盘原始蓝图，将其转译为清晰、自然、直指本质的人话，并补充独立的工程视角（指出过度设计、隐性迁移成本或过度保守），在**得到人明确批准后**才进入实现。
-
-### 3. 写审分离与有界循环
-
-- **架构师只读**：可检索与分析，不能改代码；
-- **Worker 限定作用域**：每个原子任务包明确指定 `allowed_files` 与 `verification_cmd`；
-- **审查者写审分离**：拥有读取与命令执行权限，可独立运行测试并给出 `PASS` / `REVISE` / `ESCALATE_TO_ASTRA` 结论，但没有直接编辑文件的工具权限；
-- **有界收敛**：单任务最多 2 轮修订，架构升级默认最多 1 次，防止无限返工。
-
-### 4. 泛化优先，路由与编排彻底解耦
-
-模型生态迭代极快。只要在路由层维护 5 个语义角色组（`group/role-*`），你随时可以：
-
-- 替换任意角色的底层模型或供应商，而不改一行提示词；
-- 为每个角色配置有序回退链（`routing=order`），配额耗尽或上游异常时自动切换；
-- 依据不同时间段、成本策略或额度状态，动态调整组内模型顺序；
-- 通过审计脚本核对每次调用的 `Requested`（角色组）与 `Served`（实际服务模型），保证归因真实可查。
+</div>
 
 ---
 
-## 架构总览
+```mermaid
+flowchart TB
+    U["User<br/>alignment & architecture approval"] <--> L1["L1 Communicator & Hub (main session)<br/>group/role-communicator<br/>context curation · translation · state machine"]
 
-```text
-                         ┌─────────────────────────────────────┐
-                         │                User                 │
-                         └──────────────────┬──────────────────┘
-                                            │ 自然语言对齐 / 架构审批
-                                            ▼
-                         ┌─────────────────────────────────────┐
-                         │  L1 Communicator & Hub (主会话)      │
-                         │  group/role-communicator            │
-                         │  意图对齐 · 上下文策展 · 翻译 · 状态机 │
-                         └────┬──────────┬──────────┬──────────┘
-                              │          │          │
-              ┌───────────────┘          │          └───────────────┐
-              ▼                          ▼                          ▼
-┌───────────────────────────┐ ┌───────────────────────┐ ┌───────────────────────────┐
-│ L2 Architect (只读规划)    │ │ L3 Supervisor (写审分离)│ │ L4 Worker (限定范围执行)    │
-│ group/role-architect      │ │ group/role-supervisor │ │ group/role-worker-code    │
-│ 第一性原理 · 双方案蓝图     │ │ 任务拆解 · 独立测审    │ │ 编码 · 测试 · 侦察 · 文档   │
-└───────────────────────────┘ └───────────────────────┘ └───────────────────────────┘
+    L1 --> L2["L2 Architect (read-only)<br/>group/role-architect<br/>first-principles vs. pragmatic blueprint"]
+    L1 --> L3["L3 Supervisor (read + test)<br/>group/role-supervisor<br/>task graph · independent review"]
+    L1 --> L4a["L4a Worker (read/write/scout)<br/>group/role-worker-code<br/>scoped code · tests · docs · scouting"]
+    L1 --> L4b["L4b Smart Worker (read/write/web)<br/>group/role-smart-worker<br/>parallel paper reading · synthesis · writing"]
 
-独立权限分类旁路：Auto Mode ──► group/role-auto-mode（不跟随主会话模型漂移）
+    AM["Auto Mode Permission Classifier"] -. "pinned bypass (stays=off)" .-> L5["group/role-auto-mode<br/>fast stateless safety check"]
 ```
 
----
-
-## 语义角色组与能力画像
-
-编排层只认以下 5 个语义路由组，不预设任何特定模型。你可以根据自己可用的模型池，按能力画像自由填入首选与回退链：
-
-| 角色层 | 语义路由组 | 权限边界 | 推荐能力画像（Model-Agnostic） | 默认路由策略 |
-|---|---|---|---|---|
-| **L1 沟通中枢** | `group/role-communicator` | 主会话编排 | 沟通自然、上下文理解强、擅长总结转译与多步协作 | `routing=order` `stays=session` |
-| **L2 架构师** | `group/role-architect` | 只读（检索/调研） | 高深度推理、第一性原理建模、复杂架构与难题诊断 | `routing=order` `stays=session` |
-| **L3 拆解与审查** | `group/role-supervisor` | 只读 + Bash 测试 | 任务分解严谨、边界条件敏感、擅长严格代码审查 | `routing=order` `stays=session` |
-| **L4 执行 Worker** | `group/role-worker-code` | 读写 + 测试 + 只读侦察 | 高性价比、响应快、代码实现准确且兼顾长上下文侦察与文档 | `routing=order` `stays=auto` |
-| **Auto Mode 分类器** | `group/role-auto-mode` | 权限安全分类 | 极低延迟、低成本、适合高频无状态权限判定 | `routing=order` `stays=off` |
-
-> **关于命名说明**：目录中的命令名（`/astra`、`/kimi`、`/worker`、`/commlaude`）与子代理文件名（`.claude/agents/*.md`）是参考实现沿用的语义槽位标识；实际路由完全由 `group/role-*` 决定，不限定任何具体模型。
-
----
-
-## 四种按需提速入口
-
-按任务复杂度选择合适档位，避免小事走重流程，也避免大事缺少设计把关：
-
-| 入口 | 协作路径 | 适用场景 | 关键约束 |
-|---|---|---|---|
-| `/astra <问题>` | `User ↔ L1 ↔ L2` | 架构讨论、难题诊断、第一性原理头脑风暴 | 只读，不改代码 |
-| `/worker <小型明确任务>` | `User ↔ L1 → 单 L4` | 边界清晰的改代码/修 Bug、补测试、改文档或只读侦察 | 直连 `group/role-worker-code`（默认可读写执行，侦察时走只读 Scout Mode），**无独立审查** |
-| `/kimi <明确任务>` | `User ↔ L1 → L3 → L4 → L3` | 设计已经清楚的功能实现、缺陷修复、范围重构 | 跳过架构阶段，保留独立测试与审查 |
-| `/commlaude <复杂任务>` | `User ↔ L1 ↔ L2 → [人工审批] → L3 ↔ L4` | 复杂特性、大型重构、方案不确定的研发任务 | **架构经人明确批准后才写代码**，最多 2 轮修订 |
-
-每次多步编排都会在当前项目目录沉淀可追踪产物：
-
 ```text
-<project>/.orchestra/<YYYYMMDD-HHMMSS>-<slug>/
-├── 00-brief.md          # L1 提炼的问题定义、约束与验收标准
-├── 01-blueprint.md      # L2 原始技术蓝图 + 人类审批结论
-├── 02-tasks.json        # L3 拆解的原子任务图（含依赖与 allowed_files）
-├── 03-reports/          # L4 各任务执行与验证证据
-└── 04-review.md         # L3 独立测试与逐轮审查结论
+$ ./bin/orchestra-audit --since '2026-11-23T00:00:00Z'
+| Requested                | Served         | Calls | Avg ms | Errors |
+| ------------------------ | -------------- | ----- | ------ | ------ |
+| group/role-communicator  | <hub-model>    |    12 |   6420 |      0 |
+| group/role-architect     | <arch-model>   |     2 |  18900 |      0 |
+| group/role-supervisor    | <review-model> |     4 |  14300 |      0 |
+| group/role-worker-code   | <code-model>   |     8 |   4150 |      0 |
+| group/role-smart-worker  | <smart-model>  |     5 |  22100 |      0 |
+| group/role-auto-mode     | <fast-model>   |    19 |    910 |      0 |
 ```
 
+> [!NOTE]
+> `commlaude` keeps all configuration, agents, skills, commands, session history, and smoke-test artifacts inside its own repository directory via `CLAUDE_CONFIG_DIR`. Your global `~/.claude/` directory and existing Magpie main/tier/subagent bindings remain untouched.
+
 ---
 
-## 快速开始
+## Why `commlaude`?
 
-### 前置条件
+In multi-step engineering and research workflows, using one model for every turn creates predictable trade-offs: frontier reasoning models are slow and verbose for conversational alignment, fast coding models cut corners on architecture, and Auto Mode permission checks can quietly drift onto an expensive main model.
 
-- macOS / 类 Unix 环境，已安装 Claude Code CLI（默认探测 `/opt/homebrew/bin/claude`，可通过 `CLAUDE_BIN` 指定）。
-- 已安装并运行本地 Magpie 网关（默认监听 `http://127.0.0.1:3425`，或任意支持分组路由的 Anthropic 兼容本地网关）。
-- Python 3（仅使用标准库，无第三方依赖）。
+`commlaude` separates concerns into **6 semantic routing groups** and **5 command speeds** with strict boundaries:
 
-### 1. 创建五个语义角色组
+- **Communication-First Hub (Depth-1 Flat Orchestration)**: Claude Code subagents cannot spawn sub-subagents. L1 stays the sole coordinator — curating concise briefs (`00-brief.md`), dispatching independent tasks in parallel waves, and keeping context clean.
+- **Voice Isolation ("Thinker Thinks, Communicator Speaks")**: L2 Architect is strictly read-only and outputs raw **Bold/First-Principles vs. Pragmatic** blueprints. L1 translates them into plain trade-offs, adds an independent engineering critique, and waits for explicit human approval before any code is written.
+- **Write/Review Separation & Bounded Loops**: Workers edit only `allowed_files` and must run `verification_cmd`. L3 Supervisor has `Read` + `Bash` to run tests independently, has no `Write`/`Edit` tools, and caps revision loops at **2 rounds per task packet**.
+- **Model-Agnostic Routing**: Zero vendor or model names are hardcoded in agents, skills, or commands. Every role binds to `group/role-*`; swap models, adjust fallback chains, or apply schedules at the gateway layer without editing prompts.
 
-`setup-magpie.sh` 内置了一组参考映射，你可以直接通过环境变量传入自己手头的模型列表（逗号分隔，按优先级排序），无需改动脚本本身：
+### How it compares
+
+| Capability | Single-Model Claude Code | Ad-Hoc Subagent Prompts | `commlaude` |
+| --- | :---: | :---: | :---: |
+| Separate models for comm, architecture, review, fast code & deep batch work | No | Manual | **6 semantic `group/role-*` groups** |
+| Read-only architect + human approval gate before edits | No | Prompt-only | **Enforced tool & workflow gate** |
+| Independent reviewer with test execution and no file-write tools | No | Rarely | **Enforced (`Read/Grep/Glob/Bash`)** |
+| Native parallel batch research/writing (`Agent` waves, not shell scripts) | Manual | Ad-hoc | **`/smarter` + `smart-worker`** |
+| Auto Mode permission classifier pinned away from main model | No | No | **`CLAUDE_CODE_AUTO_MODE_SERVER=0`** |
+| Zero modification to `~/.claude/` & reversible install | N/A | Mutates global config | **Isolated dir + `./uninstall.sh`** |
+| Post-run `Requested` vs `Served` model attribution audit | No | No | **`./bin/orchestra-audit`** |
+
+---
+
+## 60-Second Quickstart
+
+**Prerequisites**: macOS / Unix, Claude Code CLI (`/opt/homebrew/bin/claude` or `CLAUDE_BIN`), a running local Magpie gateway on `http://127.0.0.1:3425` (or any Anthropic-compatible gateway supporting group IDs), and Python 3 (stdlib only, 0 third-party dependencies).
 
 ```bash
-ROLE_COMMUNICATOR_MODELS="<primary>,<fallback>" \
-ROLE_ARCHITECT_MODELS="<primary>,<fallback>" \
-ROLE_SUPERVISOR_MODELS="<primary>,<fallback>" \
-ROLE_WORKER_CODE_MODELS="<primary>,<fallback>" \
-ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
+# 1. Clone the repository
+git clone https://github.com/zhubaodian1027/commlaude.git && cd commlaude
+
+# 2. Provision the 6 group/role-* routing groups (auto-saves a Magpie rollback snapshot first)
 ./setup-magpie.sh
+
+# 3. Verify static config and launch the isolated Claude Code environment
+./bin/orchestra-verify && ./bin/claude-orchestra
 ```
 
-或者直接编辑 `setup-magpie.sh` 中的默认模型列表后执行 `./setup-magpie.sh`（也可在已有 Claude Code 会话中使用 `! ./setup-magpie.sh`）。
+Expected verification output:
 
-脚本会自动完成以下安全措施：
-
-1. 首次运行时自动保存带时间戳的 Magpie 回滚快照，快照名仅记录在本目录被 git 忽略的 `.magpie-setup-state`。
-2. 仅创建五个 `group/role-*` 路由组；若发现同名组已存在且非本安装创建，会拒绝覆盖并退出。
-3. **不会修改**现有的 Magpie 主模型、四个 tier 或全局 subagent 绑定。
-
-### 2. 启动隔离环境
-
-在任意项目目录下运行本仓库中的启动器：
-
-```bash
-/path/to/commlaude/bin/claude-orchestra
+```text
+OK: 19 required files, agent routing, tool restrictions, and script syntax verified.
+Isolated config: <repo>/.claude
+Live Magpie routing is checked separately by scripts/routing_smoke_test.sh.
 ```
 
-如果希望在任意目录通过短命令启动，可在 `~/.zshrc`（或对应 shell 配置）中添加带标记的 alias（卸载脚本可自动识别并仅移除该标记块）：
+<details>
+<summary><strong>Optional: install the <code>commlaude</code> shell alias</strong></summary>
+
+Add this marked block to `~/.zshrc` (the uninstall script recognizes and removes only this block):
 
 ```zsh
 # >>> commlaude isolated launcher >>>
@@ -160,7 +107,7 @@ alias commlaude='/path/to/commlaude/bin/claude-orchestra'
 # <<< commlaude isolated launcher <<<
 ```
 
-随后 `source ~/.zshrc`，即可在任意项目目录运行：
+Then run `source ~/.zshrc` and launch from any project directory:
 
 ```bash
 commlaude
@@ -168,104 +115,185 @@ commlaude --resume
 commlaude --version
 ```
 
-启动器会自动完成：
+</details>
 
-- 将 `CLAUDE_CONFIG_DIR` 固定指向本仓库的 `.claude/`；
-- 直连本机网关 `http://127.0.0.1:3425`（使用非机密本地占位令牌 `magpie-local`）；
-- 清除继承的 `CLAUDE_CODE_SUBAGENT_MODEL`、`ANTHROPIC_MODEL` 等全局路由覆盖，避免原有全局配置干扰子代理路由；
-- 将 Auto Mode 权限分类器固定到 `group/role-auto-mode`（`CLAUDE_CODE_AUTO_MODE_SERVER=0`），防止权限判断漂移到主会话模型。
+<details>
+<summary><strong>Optional: override default models via environment variables</strong></summary>
 
-可选启动环境变量：
-
-- `ORCHESTRA_MAIN_MODEL`：默认 `group/role-communicator`。
-- `ORCHESTRA_EFFORT`：默认 `high`。
-- `MAGPIE_BASE_URL`：默认 `http://127.0.0.1:3425`。
-- `CLAUDE_BIN`：默认 `/opt/homebrew/bin/claude`。
-
-### 3. 动态调整任意角色组的模型顺序
-
-由于路由与编排完全解耦，想根据成本、额度或时段切换某角色的优先级（例如调整 Auto Mode 分类器或 Worker 首选模型），只需在 Magpie 中更新对应组的模型顺序：
+`setup-magpie.sh` ships with reference defaults, but every group accepts a comma-separated priority list (`primary,fallback,...`) without editing any file:
 
 ```bash
-magpie group set role-auto-mode models=<model-a>,<model-b>
+ROLE_COMMUNICATOR_MODELS="<primary>,<fallback>" \
+ROLE_ARCHITECT_MODELS="<primary>,<fallback>" \
+ROLE_SUPERVISOR_MODELS="<primary>,<fallback>" \
+ROLE_WORKER_CODE_MODELS="<primary>,<fallback>" \
+ROLE_SMART_WORKER_MODELS="<primary>,<fallback>" \
+ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
+./setup-magpie.sh
 ```
 
-`role-auto-mode` 默认使用 `routing=order` 与 `stays=off`，因此无需重启或修改启动器，等待数秒让网关加载新配置后，新的权限分类请求就会按新顺序路由。
+Safety checks built into `setup-magpie.sh`:
+1. Saves a timestamped Magpie rollback profile on first run (recorded only in gitignored `.magpie-setup-state`).
+2. Refuses to overwrite pre-existing `group/role-*` groups that were not created by this installation.
+3. Never changes existing Magpie main, tier, or global subagent bindings.
+
+</details>
 
 ---
 
-## 验证与模型归因审计
+## Five Entry Points
 
-### 静态检查与单元测试（不调用模型）
+Pick the lowest-ceremony command that matches task risk:
+
+| Command | Path | Best For | Guardrails |
+| --- | --- | --- | --- |
+| `/astra <question>` | `User ↔ L1 ↔ L2` | Architecture design, hard debugging, first-principles trade-offs | Strictly read-only; no code edits |
+| `/worker <small task>` | `User ↔ L1 → L4a` | Clear single-packet edits, bug fixes, tests, docs, or read-only scouting | Runs `worker` (`Execution Mode` by default, `Scout Mode` read-only); **no independent review** |
+| `/smarter <batch/creative task>` | `User ↔ L1 → parallel L4b` | Deep paper reading, literature synthesis, research writing, complex batch analysis | Dispatches native parallel `Agent` waves via `smart-worker` (`effort=high`, disjoint `allowed_files`); **no Kimi code-review loop** |
+| `/kimi <clear task>` | `User ↔ L1 → L3 → L4 → L3` | Well-defined feature implementation, scoped refactors, multi-file fixes | Skips architecture gate; keeps independent test execution and review |
+| `/commlaude <complex task>` | `User ↔ L1 ↔ L2 → [Approval] → L3 ↔ L4` | Ambiguous features, large refactors, research-to-code work | **Human must approve blueprint before edits**; max 2 revision rounds per packet |
+
+Multi-step runs persist auditable artifacts in the target project's `.orchestra/` directory:
+
+```text
+<project>/.orchestra/<YYYYMMDD-HHMMSS>-<slug>/
+├── 00-brief.md          # L1 goal, constraints, non-goals, done criteria
+├── 01-blueprint.md      # L2 raw blueprint + recorded human approval decision
+├── 02-tasks.json        # L3 atomic task graph (dependencies, allowed_files, verification_cmd)
+├── 03-reports/          # L4 per-packet execution & verification reports
+└── 04-review.md         # L3 independent test runs & per-round verdicts
+```
+
+---
+
+## Architecture & Role Groups
+
+All agents, skills, and commands bind exclusively to these **6 semantic routing groups**. Fill each group in Magpie according to capability profile rather than brand name:
+
+| Layer | Routing Group | Tool Boundary | Recommended Capability Profile | Default Policy |
+| --- | --- | --- | --- | --- |
+| **L1 Hub** | `group/role-communicator` | Main session orchestrator | Natural communication, strong context curation, translation, state tracking | `routing=order` `stays=session` |
+| **L2 Architect** | `group/role-architect` | Read-only + Web | Deep first-principles reasoning, failure-mode modeling, dual-option design | `routing=order` `stays=session` |
+| **L3 Supervisor** | `group/role-supervisor` | Read-only + `Bash` tests | Strict task decomposition, edge-case sensitivity, independent code review | `routing=order` `stays=session` |
+| **L4a Worker** | `group/role-worker-code` | Read/Write + `Bash` + Scout | Fast, cost-effective implementation, tests, docs, and read-only scouting | `routing=order` `stays=auto` |
+| **L4b Smart Worker** | `group/role-smart-worker` | Read/Write + `Bash` + Web | High reasoning, long-document fidelity, creative synthesis & batch analysis | `routing=order` `stays=session` |
+| **Auto Mode** | `group/role-auto-mode` | Permission safety classifier | Ultra-low latency, low cost, stateless permission classification | `routing=order` `stays=off` |
+
+> [!TIP]
+> Reorder any role's fallback chain at runtime without restarting or editing prompts:
+> ```bash
+> magpie group set role-auto-mode models=<model-a>,<model-b>
+> ```
+
+---
+
+## Verification & Attribution
+
+### Static checks & unit tests (no model calls)
 
 ```bash
 ./bin/orchestra-verify
 python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 ```
 
-### 真实路由冒烟测试（会通过网关发起模型调用）
+### Live routing probe & model attribution audit
 
 ```bash
+# Sends one minimal probe to each of the 4 subagent groups and verifies logs
 ./scripts/routing_smoke_test.sh
-```
 
-测试产物写入本目录被忽略的 `.smoke/`，并验证主会话与三个子代理角色组是否都真实发出请求。
-
-### 模型归因审计
-
-读取本地 Magpie `usage.jsonl` 的元数据（仅统计角色、模型、耗时、状态与 token/费用字段，不读取提示词或密钥）：
-
-```bash
-# 查看最近 30 分钟
+# Inspects metadata only from local Magpie usage.jsonl (no prompts or keys)
 ./bin/orchestra-audit
-
-# 查看指定 UTC 时间之后
 ./bin/orchestra-audit --since '2026-11-20T00:00:00Z'
 ```
 
-输出表格会同时展示 `Requested`（请求的语义角色组）与 `Served`（实际服务的上游模型），发生故障回退时一目了然，不会把回退模型误算为首选模型。
+`orchestra-audit` reports both `Requested` (semantic group) and `Served` (actual upstream model), making automatic failovers transparent instead of hiding them.
 
 ---
 
-## 目录隔离边界
+## Advanced Configuration & Reference
 
-本环境只在以下位置写入运行数据（均已在 `.gitignore` 中排除）：
+<details>
+<summary><strong>Launcher environment variables & isolation behavior</strong></summary>
 
-- `.claude/` 下的运行时文件（会话、设置、缓存、历史等；`.gitignore` 采用白名单机制，仅追踪 `.claude/agents/`、`.claude/commands/`、`.claude/skills/`）；
-- 目标项目的 `.orchestra/`：多步编排的工作流产物；
-- 本目录的 `.smoke/`、`logs/`、`backups/`、`.magpie-setup-state`：本地测试、日志与回滚记录。
+`bin/claude-orchestra` automatically:
+- Sets `CLAUDE_CONFIG_DIR` to `<repo>/.claude`.
+- Connects to local loopback `http://127.0.0.1:3425` with the documented non-secret placeholder token `magpie-local`.
+- Unsets inherited `CLAUDE_CODE_SUBAGENT_MODEL`, `ANTHROPIC_MODEL`, and global model overrides so subagent routing stays isolated.
+- Pins Auto Mode classification to `group/role-auto-mode` with `CLAUDE_CODE_AUTO_MODE_SERVER=0`.
 
-不会改动全局 `~/.claude/`。如需临时回到原生 Claude Code，直接运行普通的 `claude` 命令即可。
+Optional overrides at launch time:
+- `ORCHESTRA_MAIN_MODEL` (default: `group/role-communicator`)
+- `ORCHESTRA_EFFORT` (default: `high`)
+- `MAGPIE_BASE_URL` (default: `http://127.0.0.1:3425`)
+- `CLAUDE_BIN` (default: `/opt/homebrew/bin/claude`)
+
+</details>
+
+<details>
+<summary><strong>Directory isolation & privacy audit</strong></summary>
+
+Runtime state stays strictly within gitignored paths:
+- `.claude/*` uses a `.gitignore` whitelist — only authored `agents/`, `commands/`, and `skills/` are tracked; sessions, settings, caches, and histories are excluded.
+- `.orchestra/` in target repositories holds run artifacts.
+- `.smoke/`, `logs/`, `backups/`, and `.magpie-setup-state` stay local to this directory.
+
+See [docs/PRIVACY_AUDIT.md](./docs/PRIVACY_AUDIT.md) and [docs/VERIFICATION.md](./docs/VERIFICATION.md) for the release audit and verification history.
+
+</details>
+
+<details>
+<summary><strong>Troubleshooting</strong></summary>
+
+- **Gateway connection refused**: verify local Magpie is running (`magpie healthcheck`).
+- **`Model "group/role-..." isn't recognized · context assumed to be 200k tokens`**: expected Claude Code notice for custom/group model IDs; routing and execution proceed normally.
+- **Role routed to a fallback model**: inspect group health with `magpie group role-<name>` and confirm with `./bin/orchestra-audit`.
+- **Return to standard Claude Code**: run plain `claude` at any time — global `~/.claude/` is never modified.
+
+</details>
 
 ---
 
-## 撤回 / 卸载
+## Uninstall / Rollback
 
-先预览会被删除的范围，不修改任何内容：
+Preview every path and Magpie group that would be removed (changes nothing):
 
 ```bash
-./uninstall.sh --dry-run
+./uninstall.sh --dry-run --magpie
 ```
 
-卸载本目录内的隔离环境与运行产物（若 `~/.zshrc` 中存在标记的 `commlaude` alias 也会一并移除），保留 Magpie 路由组：
+Remove the isolated environment, run artifacts, and marked `~/.zshrc` alias (keeps Magpie groups):
 
 ```bash
 ./uninstall.sh --yes
 ```
 
-同时删除五个由本安装创建的 `group/role-*` 路由组：
+Also remove the 6 installation-owned `group/role-*` Magpie groups:
 
 ```bash
 ./uninstall.sh --yes --magpie
 ```
 
-> 卸载默认不会自动恢复整个 Magpie 快照，以避免覆盖你之后做的无关调整。若希望完全回到安装前的 Magpie 状态，可查看本地 `.magpie-setup-state` 中的快照名并手动执行 `magpie use '<snapshot-name>'`。
+> [!IMPORTANT]
+> Uninstall intentionally does not restore your entire Magpie snapshot so unrelated changes made later are preserved. To restore the pre-install snapshot manually, read the profile name in `.magpie-setup-state` and run `magpie use '<snapshot-name>'`.
 
 ---
 
-## 常见问题
+## Roadmap
 
-- **启动时报网关连接失败**：确认本地 Magpie 正在运行，可执行 `magpie healthcheck`。
-- **提示自定义模型名未识别（`context assumed to be 200k tokens`）**：这是 Claude Code 对自定义 `group/role-*` 名称的本地提示，不影响路由与正常调用。
-- **某个角色实际走了回退模型**：用 `magpie group role-<角色>` 检查组内成员可用性，再用 `./bin/orchestra-audit` 核对 `Requested` 与 `Served`。
-- **如何无痛切回原生环境**：直接运行 `claude`，全局配置从未被改动。
+- [ ] GitHub Actions workflow running `bin/orchestra-verify` and `tests/` on every push/PR
+- [ ] Optional `SubagentStop` hook verifying non-empty test output before accepting `Status: DONE`
+- [ ] Gateway adapter examples for non-Magpie Anthropic-compatible routers (LiteLLM / OpenRouter proxies)
+- [ ] Recorded terminal walkthrough (`vhs`) for `/commlaude` and `/smarter` parallel waves
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/#zhubaodian1027/commlaude&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=zhubaodian1027/commlaude&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=zhubaodian1027/commlaude&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=zhubaodian1027/commlaude&type=Date" />
+ </picture>
+</a>

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Live routing probe: invokes all three subagents once through the isolated launcher.
+# Live routing probe: invokes all four subagents once through the isolated launcher.
 set -euo pipefail
 
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -8,7 +8,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 SMOKE="$ROOT/.smoke/routing-$STAMP"
 mkdir -p "$SMOKE"
 
-ROLE_GROUPS=(role-communicator role-architect role-supervisor role-worker-code)
+ROLE_GROUPS=(role-communicator role-architect role-supervisor role-worker-code role-smart-worker)
 GROUP_LIST="$("$MAGPIE" groups 2>/dev/null)"
 for group in "${ROLE_GROUPS[@]}"; do
   if ! grep -Fq "group/$group" <<<"$GROUP_LIST"; then
@@ -19,7 +19,7 @@ done
 
 START="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 printf '%s\n' "$START" >"$SMOKE/started-at.txt"
-PROMPT='This is a routing smoke test, not an engineering task. Use the Agent tool once for each of these three subagent types: astra-architect, kimi-supervisor, worker. Make all three independent Agent calls in the same message. Give each agent this exact prompt: "Routing probe only: return OK without inspecting or changing files." Do not invoke any skill and do not perform other work. After the calls finish, report one line per agent with its returned status.'
+PROMPT='This is a routing smoke test, not an engineering task. Use the Agent tool once for each of these four subagent types: astra-architect, kimi-supervisor, worker, smart-worker. Make all four independent Agent calls in the same message. Give each agent this exact prompt: "Routing probe only: return OK without inspecting or changing files." Do not invoke any skill and do not perform other work. After the calls finish, report one line per agent with its returned status.'
 
 printf 'Running live probe; this makes model requests through Magpie.\n'
 if ! (cd "$SMOKE" && "$ROOT/bin/claude-orchestra" \

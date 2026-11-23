@@ -14,6 +14,7 @@ AGENTS = {
     "astra-architect": "group/role-architect",
     "kimi-supervisor": "group/role-supervisor",
     "worker": "group/role-worker-code",
+    "smart-worker": "group/role-smart-worker",
 }
 REQUIRED = [
     *(ROOT / ".claude/agents" / f"{name}.md" for name in AGENTS),
@@ -23,10 +24,12 @@ REQUIRED = [
     ROOT / ".claude/skills/astra-council/SKILL.md",
     ROOT / ".claude/skills/fast-delegate/SKILL.md",
     ROOT / ".claude/skills/worker-direct/SKILL.md",
+    ROOT / ".claude/skills/smart-worker-direct/SKILL.md",
     ROOT / ".claude/commands/commlaude.md",
     ROOT / ".claude/commands/astra.md",
     ROOT / ".claude/commands/kimi.md",
     ROOT / ".claude/commands/worker.md",
+    ROOT / ".claude/commands/smarter.md",
     ROOT / "bin/claude-orchestra",
     ROOT / "setup-magpie.sh",
     ROOT / "uninstall.sh",
@@ -91,6 +94,7 @@ def main() -> int:
         ("astra-council", "astra-council"),
         ("fast-delegate", "fast-delegate"),
         ("worker-direct", "worker-direct"),
+        ("smart-worker-direct", "smart-worker-direct"),
     ):
         path = ROOT / ".claude/skills" / directory / "SKILL.md"
         if path.is_file():

@@ -20,7 +20,7 @@ for arg in "$@"; do
       printf 'Usage: %s [--dry-run] [--yes] [--magpie]\n' "$0"
       printf '  --dry-run  list actions without changing anything\n'
       printf '  --yes      do not ask for confirmation\n'
-      printf '  --magpie   also remove the five group/role-* Magpie groups\n'
+      printf '  --magpie   also remove the six group/role-* Magpie groups\n'
       exit 0
       ;;
     *) printf 'Unknown option: %s\n' "$arg" >&2; exit 2 ;;
@@ -44,7 +44,7 @@ PATHS=(
   "$ROOT/logs"
   "$ROOT/setup-magpie.sh"
 )
-ROLE_GROUPS=(role-communicator role-architect role-supervisor role-worker-code role-auto-mode)
+ROLE_GROUPS=(role-communicator role-architect role-supervisor role-worker-code role-smart-worker role-auto-mode)
 
 printf 'This removes the isolated Claude Code configuration, sessions, and run artifacts in:\n  %s\n' "$ROOT"
 printf 'It does not touch %s/.claude or change Magpie main/tier/subagent bindings.\n' "$HOME"

@@ -15,7 +15,7 @@ Each task must contain:
 
 - `id`: `T01`, `T02`, ...
 - `title`: short action-oriented title
-- `assignee`: `worker` (bound to `group/role-worker-code`, handling code, bug fixes, tests, multi-file edits, documentation, and read-only scouting)
+- `assignee`: `worker` (bound to `group/role-worker-code`, default for scoped code, bug fixes, tests, multi-file edits, documentation, and read-only scouting) or `smart-worker` (bound to `group/role-smart-worker`, for creative, research-heavy, deep-analysis, or nuanced synthesis packets)
 - `depends_on`: array of task IDs
 - `allowed_files`: exhaustive files the worker may create or modify
 - `instructions`: precise implementation steps and constraints

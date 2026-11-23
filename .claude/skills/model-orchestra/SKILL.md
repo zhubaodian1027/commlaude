@@ -37,7 +37,7 @@ Before execution, verify unique IDs, valid assignees, acyclic dependencies, conc
 
 ## Phase 5 — Execute in Waves
 
-Run tasks in topological order. Dispatch independent tasks in the same wave with parallel Agent calls and persist each result to `03-reports/<Txx>.md`.
+Run tasks in topological order. Dispatch independent tasks in the same wave with parallel Agent calls matching each task's `assignee` (`worker` or `smart-worker`) and persist each result to `03-reports/<Txx>.md`.
 
 Workers may modify only their `allowed_files`. Use `isolation: "worktree"` when concurrent tasks could collide through build artifacts or shared generated files; account for and integrate worktree results before review. If a worker reports `BLOCKED`, resolve the scope explicitly rather than silently assigning extra files.
 

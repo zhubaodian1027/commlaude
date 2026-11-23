@@ -65,7 +65,7 @@ Preserve Astra's five sections verbatim under a clearly separated orchestration 
 Rules:
 
 - IDs are unique and match `^T[0-9]{2,}$`.
-- `assignee` is `worker`.
+- `assignee` is `worker` or `smart-worker`.
 - Dependencies refer to earlier or existing task IDs and contain no cycles.
 - `allowed_files` is exhaustive; independent tasks in the same wave have disjoint paths.
 - `verification_cmd` is a concrete executable command, not prose.

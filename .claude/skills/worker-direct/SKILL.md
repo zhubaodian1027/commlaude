@@ -5,7 +5,7 @@ description: Direct single-Worker execution for small, tightly scoped edits, foc
 
 # Direct Worker
 
-Use one Worker for one small, explicit task. Neon still coordinates and reports but does not delegate to Astra or Kimi. Do not use this path for architectural ambiguity, broad refactors, interdependent packets, or work that needs independent review; use `/kimi` or `/commlaude` instead.
+Use one Worker for one small, explicit task. Neon still coordinates and reports but does not delegate to Astra or Kimi. Do not use this path for architectural ambiguity, broad refactors, interdependent packets, or work that needs independent review (use `/kimi` or `/commlaude` instead); for batch creative, deep-reading, or research synthesis tasks, use `/smarter`.
 
 1. Confirm the goal, allowed files, and verification command. Ask a concise question if any of these materially affect safety or scope.
 2. Invoke `worker` (bound to `group/role-worker-code`) in the appropriate mode:
