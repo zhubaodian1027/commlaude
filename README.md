@@ -50,9 +50,17 @@ $ ./bin/orchestra-audit --since '2026-11-23T00:00:00Z'
 
 ## Why `commlaude`?
 
-In multi-step engineering and research workflows, using one model for every turn creates predictable trade-offs: frontier reasoning models are slow and verbose for conversational alignment, fast coding models cut corners on architecture, and Auto Mode permission checks can quietly drift onto an expensive main model.
+### Origin: Rethinking "Smartest Model on Top"
 
-`commlaude` separates concerns into **6 semantic routing groups** and **5 command speeds** with strict boundaries:
+Most multi-agent setups default to the same hierarchy: put the highest-IQ reasoning model in the main chat and let it drive faster worker subagents.
+
+In daily use, that pattern broke down for me. I rely on models like **GPT-6 Astra / GPT-6.2 Astra** for top-tier intelligence on hard design calls and reference checks, but talking to them directly is draining — they rarely speak plainly and bury real conclusions under layers of defensive hedging. By contrast, **Gemini 4 Neon** hits a rare balance in practice: solid intelligence, strong execution, high speed, and above all, **clear, direct human communication** (the last model that felt that good to converse with was **Kimi K3**, before **K3.1 Pro** was post-trained back into stiff, over-guarded phrasing).
+
+That experience led to a simple conclusion: **in interactive workflows, a model's ability to speak plainly affects both experience and task velocity more than raw peak IQ.** When your front-end model cannot communicate crisply, alignment stalls and every turn drags.
+
+`commlaude` flips the conventional subagent pattern into a **Communication-First** workflow: put the clearest communicator in the driver's seat as the main hub, call frontier reasoning models behind the scenes strictly for high-leverage thinking and review, and keep every role bound to a semantic `group/role-*` route so a post-training regression never forces you to rewrite your setup.
+
+To make that practical without sacrificing architectural rigor or safety, `commlaude` separates concerns into **6 semantic routing groups** and **5 command speeds** with strict boundaries:
 
 - **Communication-First Hub (Depth-1 Flat Orchestration)**: Claude Code subagents cannot spawn sub-subagents. L1 stays the sole coordinator — curating concise briefs (`00-brief.md`), dispatching independent tasks in parallel waves, and keeping context clean.
 - **Voice Isolation ("Thinker Thinks, Communicator Speaks")**: L2 Architect is strictly read-only and outputs raw **Bold/First-Principles vs. Pragmatic** blueprints. L1 translates them into plain trade-offs, adds an independent engineering critique, and waits for explicit human approval before any code is written.
