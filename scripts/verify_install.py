@@ -16,6 +16,13 @@ AGENTS = {
     "worker": "group/role-worker-code",
     "smart-worker": "group/role-smart-worker",
 }
+COMMANDS = {
+    "commlaude": ("astra-architect", "kimi-supervisor", "worker", "smart-worker"),
+    "astra": ("astra-architect",),
+    "kimi": ("kimi-supervisor", "worker", "smart-worker"),
+    "worker": ("worker",),
+    "smarter": ("smart-worker",),
+}
 REQUIRED = [
     *(ROOT / ".claude/agents" / f"{name}.md" for name in AGENTS),
     ROOT / ".claude/skills/model-orchestra/SKILL.md",
@@ -107,6 +114,31 @@ def main() -> int:
             except ValueError as error:
                 errors.append(str(error))
 
+    for command, required_agents in COMMANDS.items():
+        path = ROOT / ".claude/commands" / f"{command}.md"
+        if not path.is_file():
+            continue
+        try:
+            fields = frontmatter(path)
+            if not fields.get("description"):
+                errors.append(f"{path.relative_to(ROOT)}: description is empty")
+            if not fields.get("argument-hint"):
+                errors.append(f"{path.relative_to(ROOT)}: argument-hint is empty")
+            body = path.read_text(encoding="utf-8")
+            if "$ARGUMENTS" not in body:
+                errors.append(f"{path.relative_to(ROOT)}: missing $ARGUMENTS placeholder")
+            if "Use the Skill tool to invoke" in body:
+                errors.append(
+                    f"{path.relative_to(ROOT)}: uses two-hop Skill forwarding instead of inline workflow"
+                )
+            for agent_name in required_agents:
+                if agent_name not in body:
+                    errors.append(
+                        f"{path.relative_to(ROOT)}: missing expected subagent reference {agent_name}"
+                    )
+        except ValueError as error:
+            errors.append(str(error))
+
     audit = ROOT / ".claude/skills/model-orchestra/scripts/audit_run.py"
     if audit.is_file():
         try:
@@ -132,14 +164,31 @@ def main() -> int:
     if launcher.is_file():
         text = launcher.read_text(encoding="utf-8")
         for required in (
+            "ORCHESTRA_ROOT",
             "CLAUDE_CONFIG_DIR",
             "CLAUDE_CODE_SUBAGENT_MODEL",
             "CLAUDE_CODE_AUTO_MODE_MODEL",
             "CLAUDE_CODE_AUTO_MODE_SERVER",
+            "ANTHROPIC_SMALL_FAST_MODEL",
+            "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+            "CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES",
             "127.0.0.1:3425",
         ):
             if required not in text:
                 errors.append(f"launcher missing isolation setting: {required}")
+
+    global_rules = ROOT / ".claude/CLAUDE.md"
+    if not global_rules.is_file():
+        errors.append("missing: .claude/CLAUDE.md")
+    else:
+        rules_text = global_rules.read_text(encoding="utf-8")
+        for token in ("30", "LAUNCHED", "/worker", "CronCreate", "sleep"):
+            if token not in rules_text:
+                errors.append(f".claude/CLAUDE.md: missing long-task rule token {token}")
+
+    worker_agent = ROOT / ".claude/agents/worker.md"
+    if worker_agent.is_file() and "LAUNCHED" not in worker_agent.read_text(encoding="utf-8"):
+        errors.append("worker.md: missing LAUNCHED status for >30m long-task release")
 
     if errors:
         print("Configuration verification failed:", file=sys.stderr)

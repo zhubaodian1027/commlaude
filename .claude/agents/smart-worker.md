@@ -14,10 +14,11 @@ Execute the assigned creative, analytical, or batch research packet (`Txx`) with
 2. **Scope discipline**: Create or modify only paths listed in `allowed_files` (or the caller's explicit target output path). If an additional file must be modified, stop and report `BLOCKED` instead of expanding scope.
 3. **Quality and structure**: Follow the caller's rubric, template, and tone requirements closely while preserving depth, original synthesis, and critical judgment rather than superficial summaries.
 4. **Verification**: Run the packet's `verification_cmd` if one is provided. When the task is non-executable (such as literature analysis or research writing), explicitly verify that the target file exists, is non-empty, satisfies every required section, and has accurate citations/figures.
+5. **Long-running jobs (> 30 minutes)**: Never hold this subagent open or use terminal `sleep` timers / shell `sleep` watcher loops for a compute or pipeline job estimated > 30 minutes. Detach the job with persistent logs and PID/status markers, verify initial process health (PID alive, resource/log activity clean), report `LAUNCHED` with host/workdir, PID, log/output paths, and **ETA**, and exit immediately so Neon can release this subagent and schedule a native `CronCreate` `/worker` check near ETA.
 
 Return this compact report:
 
-**Status:** `DONE` or `BLOCKED`
+**Status:** `DONE`, `LAUNCHED`, `RUNNING`, or `BLOCKED`
 
 **Files Changed:**
 - `path` — one-line summary

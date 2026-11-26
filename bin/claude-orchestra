@@ -11,6 +11,7 @@ if [[ ! -x "$CLAUDE_BIN" ]]; then
   exit 1
 fi
 
+export ORCHESTRA_ROOT="$ROOT"
 export CLAUDE_CONFIG_DIR="$ROOT/.claude"
 export ANTHROPIC_BASE_URL="${MAGPIE_BASE_URL:-http://127.0.0.1:3425}"
 
@@ -72,11 +73,44 @@ unset ANTHROPIC_DEFAULT_OPUS_MODEL ANTHROPIC_DEFAULT_SONNET_MODEL
 unset ANTHROPIC_DEFAULT_HAIKU_MODEL ANTHROPIC_DEFAULT_FABLE_MODEL
 unset CLAUDE_CODE_SUBAGENT_MODEL CLAUDE_CODE_SIMPLE CLAUDE_CODE_SAFE_MODE
 
-# Keep the Auto Mode permission classifier independent of main-model selection.
-# The isolated settings.json carries the same values because this version reads
-# the classifier from user settings even when --settings supplies an override.
-export CLAUDE_CODE_AUTO_MODE_MODEL="group/role-auto-mode"
+# Keep the Auto Mode permission classifier and lightweight auxiliary helpers
+# (session titles, tool-use summaries, subagent naming, prompt/agent hooks)
+# pinned to the stateless fast group instead of the main communicator model.
+# Ensure isolated settings.json carries CLAUDE_CODE_AUTO_MODE_SERVER=0 on fresh
+# installs because Claude Code reads the server switch from user settings too.
+if [[ ! -f "$CLAUDE_CONFIG_DIR/settings.json" ]]; then
+  mkdir -p "$CLAUDE_CONFIG_DIR"
+  cat >"$CLAUDE_CONFIG_DIR/settings.json" <<'JSON'
+{
+  "env": {
+    "CLAUDE_CODE_AUTO_MODE_MODEL": "group/role-auto-mode",
+    "CLAUDE_CODE_AUTO_MODE_SERVER": "0",
+    "ANTHROPIC_SMALL_FAST_MODEL": "group/role-auto-mode",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "group/role-auto-mode",
+    "CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES": "1"
+  }
+}
+JSON
+fi
+
+AUTO_MODE_MODEL="${ORCHESTRA_AUTO_MODE_MODEL:-group/role-auto-mode}"
+export CLAUDE_CODE_AUTO_MODE_MODEL="$AUTO_MODE_MODEL"
 export CLAUDE_CODE_AUTO_MODE_SERVER=0
+export ANTHROPIC_SMALL_FAST_MODEL="$AUTO_MODE_MODEL"
+export ANTHROPIC_DEFAULT_HAIKU_MODEL="$AUTO_MODE_MODEL"
+
+# Disable periodic 30s background subagent progress summary forks by default so
+# high-reasoning subagents (e.g., group/role-architect) do not fork full contexts
+# every 30s just to write 3-5 word status labels. Set ORCHESTRA_AGENT_SUMMARIES=1
+# to re-enable them.
+case "${ORCHESTRA_AGENT_SUMMARIES:-0}" in
+  1|true|TRUE|yes|YES|on|ON)
+    export CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=0
+    ;;
+  *)
+    export CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=1
+    ;;
+esac
 
 MAIN_MODEL="${ORCHESTRA_MAIN_MODEL:-group/role-communicator}"
 EFFORT="${ORCHESTRA_EFFORT:-high}"

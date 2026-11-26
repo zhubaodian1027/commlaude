@@ -35,11 +35,11 @@ fi
 # Reference defaults for the six semantic role groups. Override any group via
 # environment variables (comma-separated model IDs in priority order) to adapt
 # to your own provider/model pool without editing agents or skills.
-ROLE_COMMUNICATOR_MODELS="${ROLE_COMMUNICATOR_MODELS:-agy-cli/gemini-4-neon,agy-cli/claude-sonnet-5-5}"
-ROLE_ARCHITECT_MODELS="${ROLE_ARCHITECT_MODELS:-codex/gpt-6.2-astra:xhigh,codex/gpt-6.2-sol:high,agy-cli/claude-opus-5-5}"
-ROLE_SUPERVISOR_MODELS="${ROLE_SUPERVISOR_MODELS:-kimi/k3.1-pro,agy-cli/gemini-4-neon,agy-cli/claude-opus-5-5}"
+ROLE_COMMUNICATOR_MODELS="${ROLE_COMMUNICATOR_MODELS:-agy-cli/gemini-4-neon}"
+ROLE_ARCHITECT_MODELS="${ROLE_ARCHITECT_MODELS:-codex/gpt-6.2-astra:xhigh,agy-cli/gemini-4-carbon,codex/gpt-6.2-sol:high}"
+ROLE_SUPERVISOR_MODELS="${ROLE_SUPERVISOR_MODELS:-agy-cli/gemini-4-carbon,kimi/k3.1-pro,agy-cli/gemini-4-neon}"
 ROLE_WORKER_CODE_MODELS="${ROLE_WORKER_CODE_MODELS:-agy-cli/gemini-4-hydrogen,deepseek/deepseek-flash}"
-ROLE_SMART_WORKER_MODELS="${ROLE_SMART_WORKER_MODELS:-kimi/k3.1-pro,codex/gpt-6.2-sol:high}"
+ROLE_SMART_WORKER_MODELS="${ROLE_SMART_WORKER_MODELS:-agy-cli/gemini-4-carbon,kimi/k3.1-pro,codex/gpt-6.2-sol:high}"
 ROLE_AUTO_MODE_MODELS="${ROLE_AUTO_MODE_MODELS:-deepseek/deepseek-flash,zcode/GLM-5.3-Flash}"
 
 "$MAGPIE" group add role-communicator \

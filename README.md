@@ -28,7 +28,7 @@ flowchart TB
     L1 --> L4a["L4a Worker (read/write/scout)<br/>group/role-worker-code<br/>scoped code · tests · docs · scouting"]
     L1 --> L4b["L4b Smart Worker (read/write/web)<br/>group/role-smart-worker<br/>parallel paper reading · synthesis · writing"]
 
-    AM["Auto Mode Permission Classifier"] -. "pinned bypass (stays=off)" .-> L5["group/role-auto-mode<br/>fast stateless safety check"]
+    AM["Auto Mode & Auxiliary Helpers"] -. "pinned bypass (stays=off)" .-> L5["group/role-auto-mode<br/>fast stateless safety & helper checks"]
 ```
 
 ```text
@@ -185,7 +185,7 @@ All agents, skills, and commands bind exclusively to these **6 semantic routing 
 | **L3 Supervisor** | `group/role-supervisor` | Read-only + `Bash` tests | Strict task decomposition, edge-case sensitivity, independent code review | `routing=order` `stays=session` |
 | **L4a Worker** | `group/role-worker-code` | Read/Write + `Bash` + Scout | Fast, cost-effective implementation, tests, docs, and read-only scouting | `routing=order` `stays=auto` |
 | **L4b Smart Worker** | `group/role-smart-worker` | Read/Write + `Bash` + Web | High reasoning, long-document fidelity, creative synthesis & batch analysis | `routing=order` `stays=session` |
-| **Auto Mode** | `group/role-auto-mode` | Permission safety classifier | Ultra-low latency, low cost, stateless permission classification | `routing=order` `stays=off` |
+| **Auto Mode & Helpers** | `group/role-auto-mode` | Classifier & auxiliary helpers | Ultra-low latency, low cost, stateless permission checks, titles & summaries | `routing=order` `stays=off` |
 
 > [!TIP]
 > Reorder any role's fallback chain at runtime without restarting or editing prompts:
@@ -225,15 +225,18 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 <summary><strong>Launcher environment variables & isolation behavior</strong></summary>
 
 `bin/claude-orchestra` automatically:
-- Sets `CLAUDE_CONFIG_DIR` to `<repo>/.claude`.
+- Sets `CLAUDE_CONFIG_DIR` to `<repo>/.claude` and exports `ORCHESTRA_ROOT=<repo>`.
 - Connects to local loopback `http://127.0.0.1:3425` with the documented non-secret placeholder token `magpie-local`.
 - Unsets inherited `CLAUDE_CODE_SUBAGENT_MODEL`, `ANTHROPIC_MODEL`, and global model overrides so subagent routing stays isolated.
-- Pins Auto Mode classification to `group/role-auto-mode` with `CLAUDE_CODE_AUTO_MODE_SERVER=0`.
+- Pins Auto Mode classification (`CLAUDE_CODE_AUTO_MODE_MODEL`, `CLAUDE_CODE_AUTO_MODE_SERVER=0`) and lightweight auxiliary helper calls (`ANTHROPIC_SMALL_FAST_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`) to `group/role-auto-mode`.
+- Disables periodic 30-second background subagent progress summary forks (`CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=1`) so high-reasoning subagents do not spend full-context calls generating 3–5 word UI labels.
 - Automatically symlinks global user skills from `~/.claude/skills/` into `.claude/skills/` (never overriding the 5 built-in skills, pruning stale links automatically, and kept gitignored).
 
 Optional overrides at launch time:
 - `ORCHESTRA_MAIN_MODEL` (default: `group/role-communicator`)
 - `ORCHESTRA_EFFORT` (default: `high`)
+- `ORCHESTRA_AUTO_MODE_MODEL` (default: `group/role-auto-mode`)
+- `ORCHESTRA_AGENT_SUMMARIES` (default: `0`; set to `1` to re-enable 30s background subagent progress summaries)
 - `ORCHESTRA_INHERIT_SKILLS` (default: `1`; set to `0` to disable global skill bridging and remove bridged symlinks)
 - `ORCHESTRA_GLOBAL_SKILLS_DIR` (default: `~/.claude/skills`)
 - `MAGPIE_BASE_URL` (default: `http://127.0.0.1:3425`)

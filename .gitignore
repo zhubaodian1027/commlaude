@@ -8,6 +8,7 @@ backups/
 
 # Claude Code runtime is private by default; publish only authored source.
 .claude/*
+!.claude/CLAUDE.md
 !.claude/agents/
 !.claude/commands/
 !.claude/skills/

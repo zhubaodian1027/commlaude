@@ -1,6 +1,6 @@
 ---
 name: model-orchestra
-description: Full four-tier multi-model orchestration workflow (Neon Hub, Astra Architect, Kimi Supervisor, Worker). Use for /commlaude, complex features, major refactors, and research-to-code tasks requiring explicit architecture approval, execution, and independent review.
+description: Full four-tier multi-model orchestration workflow (Neon Hub, Astra Architect, Kimi Supervisor, Worker) for complex features, major refactors, and research-to-code tasks requiring explicit architecture approval, execution, and independent review. (Slash command /commlaude already inlines this workflow; do not re-invoke this skill when /commlaude is active.)
 ---
 
 # Model Orchestra
@@ -37,7 +37,7 @@ Before execution, verify unique IDs, valid assignees, acyclic dependencies, conc
 
 ## Phase 5 — Execute in Waves
 
-Run tasks in topological order. Dispatch independent tasks in the same wave with parallel Agent calls matching each task's `assignee` (`worker` or `smart-worker`) and persist each result to `03-reports/<Txx>.md`.
+Run tasks in topological order. Dispatch independent tasks in the same wave with parallel Agent calls matching each task's `assignee` (`worker` or `smart-worker`) and persist each result to `03-reports/<Txx>.md`. For any task estimated **> 30 minutes**, release the launcher worker immediately after detached startup and process health check (`Status: LAUNCHED` + ETA), then create a native scheduled task near ETA (`ToolSearch` → `CronCreate` with `recurring: false`, avoiding terminal `sleep`) to run `/worker` before advancing dependent waves or Phase 6.
 
 Workers may modify only their `allowed_files`. Use `isolation: "worktree"` when concurrent tasks could collide through build artifacts or shared generated files; account for and integrate worktree results before review. If a worker reports `BLOCKED`, resolve the scope explicitly rather than silently assigning extra files.
 
@@ -53,6 +53,6 @@ Invoke `kimi-supervisor` with `MODE: REVIEW`, the run path, and the relevant dif
 
 ## Phase 7 — Debrief
 
-Optionally run `bin/orchestra-audit --since <run_start_iso>` from the installation directory to verify actual upstream routing.
+Optionally run `"$ORCHESTRA_ROOT/bin/orchestra-audit" --since <run_start_iso>` to verify actual upstream routing.
 
 Deliver a concise human report covering what changed, verification actually run, issues Kimi caught and how they were resolved, remaining risks, and the run artifact path. Distinguish requested role models from fallback models shown by the audit; never claim attribution that the log does not prove.

@@ -1,6 +1,6 @@
 ---
 name: astra-council
-description: Fast two-model thinking workflow (User, Neon, Astra). Use for /astra, brainstorming, difficult math/research/architecture questions, and deep diagnosis when no workers or independent implementation review are needed.
+description: Fast two-model thinking workflow (User, Neon, Astra) for natural-language brainstorming, difficult math/research/architecture questions, and deep diagnosis when no workers or independent implementation review are needed. (Slash command /astra already inlines this workflow; do not re-invoke this skill when /astra is active.)
 ---
 
 # Astra Council

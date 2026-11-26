@@ -75,13 +75,13 @@ Rules:
 ```markdown
 # Txx — <title>
 
-**Status:** DONE | BLOCKED
+**Status:** DONE | LAUNCHED | RUNNING | BLOCKED
 
 ## Files Changed
-- `path` — summary
+- `path` — summary (for >30m `LAUNCHED` / `RUNNING` jobs, also record host/workdir, PID/job ID, log path, marker/output path, and ETA)
 
 ## Verification
-- Command: `exact command`
+- Command: `exact command` (or post-launch process health check while `LAUNCHED` / `RUNNING`)
 - Exit code: `0`
 - Output: `relevant snippet`
 

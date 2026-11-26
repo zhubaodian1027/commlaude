@@ -28,7 +28,7 @@ flowchart TB
     L1 --> L4a["L4a 快速 Worker (读写/侦察)<br/>group/role-worker-code<br/>限定范围编码 · 测试 · 文档 · 侦察"]
     L1 --> L4b["L4b 深度 Smart Worker (读写/联网)<br/>group/role-smart-worker<br/>批量论文精读 · 文献综述 · 创造性写作"]
 
-    AM["Auto Mode 权限分类器"] -. "独立旁路锁定 (stays=off)" .-> L5["group/role-auto-mode<br/>低延迟无状态权限判定"]
+    AM["Auto Mode 与轻量辅助请求"] -. "独立旁路锁定 (stays=off)" .-> L5["group/role-auto-mode<br/>低延迟无状态权限与杂活判定"]
 ```
 
 ```text
@@ -185,7 +185,7 @@ ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
 | **L3 拆解与审查** | `group/role-supervisor` | 只读 + `Bash` 测试 | 任务分解严谨、边界条件敏感、擅长严格代码审查 | `routing=order` `stays=session` |
 | **L4a 快速 Worker** | `group/role-worker-code` | 读写 + 测试 + 只读侦察 | 高性价比、响应快、代码实现准确且兼顾侦察与文档 | `routing=order` `stays=auto` |
 | **L4b 深度 Smart Worker** | `group/role-smart-worker` | 读写 + 测试 + 联网检索 | 强推理、长文档忠实度与创造性综合能力强，适合并行精读论文与深度写作 | `routing=order` `stays=session` |
-| **Auto Mode 分类器** | `group/role-auto-mode` | 权限安全分类 | 极低延迟、低成本、适合高频无状态权限判定 | `routing=order` `stays=off` |
+| **Auto Mode 与辅助杂活** | `group/role-auto-mode` | 权限分类与标题/摘要等辅助请求 | 极低延迟、低成本、适合高频无状态权限判定与轻量摘要 | `routing=order` `stays=off` |
 
 > [!TIP]
 > 运行时想调整任意角色的优先级或回退链，直接修改 Magpie 分组即可，无需重启会话或改提示词：
@@ -225,15 +225,18 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 <summary><strong>启动器环境变量与隔离机制</strong></summary>
 
 `bin/claude-orchestra` 会自动完成：
-- 将 `CLAUDE_CONFIG_DIR` 固定指向本仓库的 `.claude/`；
+- 将 `CLAUDE_CONFIG_DIR` 固定指向本仓库的 `.claude/`，并导出 `ORCHESTRA_ROOT=<仓库目录>`；
 - 直连本机网关 `http://127.0.0.1:3425`（使用非机密本地占位令牌 `magpie-local`）；
 - 清除继承的 `CLAUDE_CODE_SUBAGENT_MODEL`、`ANTHROPIC_MODEL` 等全局路由覆盖，防止干扰子代理路由；
-- 将 Auto Mode 分类器锁定到 `group/role-auto-mode`（`CLAUDE_CODE_AUTO_MODE_SERVER=0`）；
+- 将 Auto Mode 分类器（`CLAUDE_CODE_AUTO_MODE_MODEL`、`CLAUDE_CODE_AUTO_MODE_SERVER=0`）与会话标题、工具折叠摘要、子代理命名等轻量辅助请求（`ANTHROPIC_SMALL_FAST_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`）统一锁定到 `group/role-auto-mode`；
+- 默认关闭子代理每 30 秒一次的全量上下文后台进度摘要（`CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=1`），避免高推理子代理为生成 3–5 个词的状态标签反复消耗推理配额；
 - 以软链接方式自动桥接全局 `~/.claude/skills/` 中的个人 Skill（不覆盖内置 5 个编排 Skill，失效软链接自动清理，且被 `.gitignore` 排除）。
 
 可选启动环境变量：
 - `ORCHESTRA_MAIN_MODEL`：默认 `group/role-communicator`
 - `ORCHESTRA_EFFORT`：默认 `high`
+- `ORCHESTRA_AUTO_MODE_MODEL`：默认 `group/role-auto-mode`
+- `ORCHESTRA_AGENT_SUMMARIES`：默认 `0`（设为 `1` 可重新开启子代理 30 秒后台进度摘要）
 - `ORCHESTRA_INHERIT_SKILLS`：默认 `1`（设为 `0` 可禁用全局 Skill 桥接并清理已桥接软链接）
 - `ORCHESTRA_GLOBAL_SKILLS_DIR`：默认 `~/.claude/skills`
 - `MAGPIE_BASE_URL`：默认 `http://127.0.0.1:3425`

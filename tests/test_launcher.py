@@ -21,6 +21,10 @@ class LauncherTests(unittest.TestCase):
                 "{\n"
                 "  printf 'model=%s\\n' \"$CLAUDE_CODE_AUTO_MODE_MODEL\"\n"
                 "  printf 'server=%s\\n' \"$CLAUDE_CODE_AUTO_MODE_SERVER\"\n"
+                "  printf 'small_fast=%s\\n' \"$ANTHROPIC_SMALL_FAST_MODEL\"\n"
+                "  printf 'haiku=%s\\n' \"$ANTHROPIC_DEFAULT_HAIKU_MODEL\"\n"
+                "  printf 'disable_summaries=%s\\n' \"$CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES\"\n"
+                "  printf 'root=%s\\n' \"$ORCHESTRA_ROOT\"\n"
                 "  printf 'config=%s\\n' \"$CLAUDE_CONFIG_DIR\"\n"
                 "  printf 'arg=%s\\n' \"$@\"\n"
                 "} > \"$CAPTURE_PATH\"\n",
@@ -33,9 +37,13 @@ class LauncherTests(unittest.TestCase):
                 CAPTURE_PATH=str(capture),
                 CLAUDE_CODE_AUTO_MODE_MODEL="group/role-communicator",
                 CLAUDE_CODE_AUTO_MODE_SERVER="1",
+                ANTHROPIC_SMALL_FAST_MODEL="group/role-communicator",
+                ANTHROPIC_DEFAULT_HAIKU_MODEL="claude-haiku-4-5",
+                CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES="0",
                 ORCHESTRA_GLOBAL_SKILLS_DIR=str(temp / "empty-global-skills"),
             )
             env.pop("ORCHESTRA_AUTO_MODE_MODEL", None)
+            env.pop("ORCHESTRA_AGENT_SUMMARIES", None)
             env.pop("ORCHESTRA_INHERIT_SKILLS", None)
 
             result = subprocess.run(
@@ -51,8 +59,55 @@ class LauncherTests(unittest.TestCase):
             fields = dict(line.split("=", 1) for line in lines)
             self.assertEqual(fields["model"], "group/role-auto-mode")
             self.assertEqual(fields["server"], "0")
+            self.assertEqual(fields["small_fast"], "group/role-auto-mode")
+            self.assertEqual(fields["haiku"], "group/role-auto-mode")
+            self.assertEqual(fields["disable_summaries"], "1")
+            self.assertEqual(fields["root"], str(ROOT))
             self.assertEqual(fields["config"], str(ROOT / ".claude"))
             self.assertEqual(fields["arg"], "--version")
+
+    def test_helper_model_and_agent_summary_overrides(self) -> None:
+        with tempfile.TemporaryDirectory(dir=Path(__file__).parent) as directory:
+            temp = Path(directory)
+            capture = temp / "capture.txt"
+            fake_claude = temp / "claude"
+            fake_claude.write_text(
+                "#!/usr/bin/env bash\n"
+                "{\n"
+                "  printf 'model=%s\\n' \"$CLAUDE_CODE_AUTO_MODE_MODEL\"\n"
+                "  printf 'small_fast=%s\\n' \"$ANTHROPIC_SMALL_FAST_MODEL\"\n"
+                "  printf 'haiku=%s\\n' \"$ANTHROPIC_DEFAULT_HAIKU_MODEL\"\n"
+                "  printf 'disable_summaries=%s\\n' \"$CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES\"\n"
+                "} > \"$CAPTURE_PATH\"\n",
+                encoding="utf-8",
+            )
+            fake_claude.chmod(0o700)
+            env = os.environ.copy()
+            env.update(
+                CLAUDE_BIN=str(fake_claude),
+                CAPTURE_PATH=str(capture),
+                ORCHESTRA_AUTO_MODE_MODEL="group/custom-fast",
+                ORCHESTRA_AGENT_SUMMARIES="1",
+                ORCHESTRA_GLOBAL_SKILLS_DIR=str(temp / "empty-global-skills"),
+            )
+
+            result = subprocess.run(
+                [str(LAUNCHER), "--version"],
+                env=env,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            fields = dict(
+                line.split("=", 1)
+                for line in capture.read_text(encoding="utf-8").splitlines()
+            )
+            self.assertEqual(fields["model"], "group/custom-fast")
+            self.assertEqual(fields["small_fast"], "group/custom-fast")
+            self.assertEqual(fields["haiku"], "group/custom-fast")
+            self.assertEqual(fields["disable_summaries"], "0")
 
     def test_global_skills_bridging_and_cleanup(self) -> None:
         skills_dir = ROOT / ".claude/skills"

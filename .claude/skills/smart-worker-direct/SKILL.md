@@ -1,6 +1,6 @@
 ---
 name: smart-worker-direct
-description: Direct high-reasoning single or parallel batch dispatch to smart-worker (group/role-smart-worker) for creative, judgment-heavy, or synthesis-intensive work such as deep paper reading, literature digests, nuanced research writing, and complex analysis. Use for /smarter when tasks benefit from stronger reasoning and native parallel Agent execution without full /commlaude architecture ceremony.
+description: Direct high-reasoning single or parallel batch dispatch to smart-worker (group/role-smart-worker) for creative, judgment-heavy, or synthesis-intensive work such as deep paper reading, literature digests, nuanced research writing, and complex analysis without full architecture ceremony. (Slash command /smarter already inlines this workflow; do not re-invoke this skill when /smarter is active.)
 ---
 
 # Smart Worker Direct
@@ -15,5 +15,6 @@ Neon remains the sole coordinator at depth 1 and dispatches native `Agent` calls
    - For a batch task (such as multiple papers, sections, or reports), partition into independent packets (`T01`, `T02`, ...) with strictly **disjoint `allowed_files`**.
    - Dispatch independent packets concurrently in bounded waves (typically 3–5 parallel native `Agent` calls with `subagent_type: "smart-worker"` per wave) to balance throughput with upstream rate limits and quality oversight.
    - Do not shell out to background `claude -p` scripts when native `Agent` calls can execute directly.
+   - **Long-running jobs (> 30 minutes)**: If any packet launches a compute or pipeline job estimated > 30 minutes, require the subagent to start it detached, verify process health, report `Status: LAUNCHED` with PID/logs/ETA, and exit immediately so the subagent is released; create a native one-shot scheduled task near ETA (`ToolSearch` → `CronCreate` with `recurring: false`, avoiding terminal `sleep` timers or shell polling loops) to run `/worker` and check completion.
 3. **Inspect & Aggregate**: Do not author the delegated deliverables yourself during execution. After each wave finishes, verify that every target file exists, is non-empty, and satisfies the required rubric before launching the next wave or updating any shared index/summary file.
-4. **Debrief**: Report per-item status, written file paths, key findings or caveats, and optionally audit upstream routing with `bin/orchestra-audit --since <run_start_iso>`. Note briefly that this path has **no independent Kimi review loop**.
+4. **Debrief**: Report per-item status, written file paths, key findings or caveats, and optionally audit upstream routing with `"$ORCHESTRA_ROOT/bin/orchestra-audit" --since <run_start_iso>`. Note briefly that this path has **no independent Kimi review loop**.

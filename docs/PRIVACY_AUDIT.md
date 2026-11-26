@@ -7,7 +7,7 @@ Audit date: 2026-11-21 (public-release readiness check).
 - Removed local OS usernames, hardcoded user-home paths, and personal workspace paths from publishable source and documentation. Scripts derive their installation root dynamically; documentation uses relative paths or generic placeholders.
 - Scrubbed machine-specific operational traces from `docs/VERIFICATION.md`: removed local rollback snapshot timestamps, local `.smoke/` run timestamps, local shell backup filenames, unrelated local Magpie group names, and local shell environment details.
 - Decoupled `README.md` from personal model/provider choices and schedules, documenting the six semantic `group/role-*` groups by capability profile instead.
-- Enforced a strict `.claude/*` whitelist in `.gitignore`: everything directly under `.claude/` is ignored except authored `agents/`, `commands/`, and `skills/`.
+- Enforced a strict `.claude/*` whitelist in `.gitignore`: everything directly under `.claude/` is ignored except authored `CLAUDE.md`, `agents/`, `commands/`, and `skills/`.
 - Excluded `.smoke/`, `.orchestra/`, `logs/`, `backups/`, `.DS_Store`, and `.magpie-setup-state`.
 - No API key, access token, private key, session key, personal email address, URL-embedded credential, non-loopback IP, or personal absolute path was found in any publishable file.
 

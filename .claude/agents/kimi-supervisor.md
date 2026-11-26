@@ -21,7 +21,7 @@ Each task must contain:
 - `instructions`: precise implementation steps and constraints
 - `verification_cmd`: one concrete command with an expected successful exit status
 
-Make packets atomic and independently testable. Minimize dependencies and maximize safe parallelism. Tasks that can run in the same dependency wave must have disjoint `allowed_files`. Do not invent repository paths without checking them.
+Make packets atomic and independently testable. Minimize dependencies and maximize safe parallelism. Tasks that can run in the same dependency wave must have disjoint `allowed_files`. Do not invent repository paths without checking them. If any packet involves a job estimated to run **longer than 30 minutes**, explicitly instruct the worker in `instructions` to launch it detached, verify initial process health, report `Status: LAUNCHED` with PID/logs/ETA, and exit immediately (so Neon schedules a timed `/worker` check near ETA to run `verification_cmd` once finished).
 
 ## MODE: REVIEW
 
