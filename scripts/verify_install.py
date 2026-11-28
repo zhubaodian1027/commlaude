@@ -41,6 +41,8 @@ REQUIRED = [
     ROOT / ".claude/commands/worker.md",
     ROOT / ".claude/commands/smarter.md",
     ROOT / "bin/claude-orchestra",
+    ROOT / "bin/commlaude-mcp",
+    ROOT / "scripts/mcp_server.py",
     ROOT / "setup-magpie.sh",
     ROOT / "uninstall.sh",
 ]
@@ -143,15 +145,19 @@ def main() -> int:
         except ValueError as error:
             errors.append(str(error))
 
-    audit = ROOT / ".claude/skills/model-orchestra/scripts/audit_run.py"
-    if audit.is_file():
-        try:
-            ast.parse(audit.read_text(encoding="utf-8"), filename=str(audit))
-        except SyntaxError as error:
-            errors.append(f"audit_run.py: {error}")
+    for py_script in (
+        ROOT / ".claude/skills/model-orchestra/scripts/audit_run.py",
+        ROOT / "scripts/mcp_server.py",
+    ):
+        if py_script.is_file():
+            try:
+                ast.parse(py_script.read_text(encoding="utf-8"), filename=str(py_script))
+            except SyntaxError as error:
+                errors.append(f"{py_script.name}: {error}")
 
     for script in (
         ROOT / "bin/claude-orchestra",
+        ROOT / "bin/commlaude-mcp",
         ROOT / "bin/orchestra-audit",
         ROOT / "bin/orchestra-verify",
         ROOT / "setup-magpie.sh",

@@ -2,18 +2,19 @@
 
 # commlaude
 
-**目录完全隔离的 Communication-First 多模型 Claude Code 编排层。**
+**目录完全隔离、已 Skill 化的 Communication-First 多模型编排层——既可原生运行在 Claude Code，也能作为 Skill + 本地 MCP 直接接入 Antigravity、Cursor、Codex 等任意 Agent。**
 
-将沟通中枢、只读架构规划、独立测审、快速编码、并行深度研究与 Auto Mode 权限分类拆分到 6 个解耦语义路由组——零侵入全局 `~/.claude/` 与原有 Magpie 绑定。
+将沟通中枢、只读架构规划、独立测审、快速编码、并行深度研究与 Auto Mode 权限分类拆分到 6 个解耦语义路由组——零侵入全局 `~/.claude/` 与原有 Magpie 绑定。借助跨宿主 `SKILL.md` 与零依赖本地 stdio MCP（`bin/commlaude-mcp`），L1 沟通中枢也已彻底解绑，而 L2–L4 子代理依然运行在隔离的 Claude Code + Magpie 底座之上。
 
 [![GitHub Stars](https://img.shields.io/github/stars/zhubaodian1027/commlaude?style=flat)](https://github.com/zhubaodian1027/commlaude/stargazers)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-CLI-111827?style=flat)
+![Skill + MCP](https://img.shields.io/badge/Skill%20%2B%20MCP-Antigravity%20%7C%20任意%20Agent-7c3aed?style=flat)
 ![Dependencies](https://img.shields.io/badge/Python-仅标准库-2563eb?style=flat)
 ![Isolation](https://img.shields.io/badge/配置边界-目录完全隔离-059669?style=flat)
 
 [English](./README.md) · **简体中文**
 
-[60 秒上手](#60-秒极速上手) · [为什么做这个](#为什么选择-commlaude) · [六种入口](#六种按需提速入口) · [架构与角色组](#架构与语义角色组) · [验证与审计](#验证与模型归因审计) · [卸载回滚](#撤回--卸载)
+[60 秒上手](#60-秒极速上手) · [为什么做这个](#为什么选择-commlaude) · [六种入口](#六种按需提速入口) · [在任意 Agent 中使用](#在任意-agent-中使用skill--mcp) · [架构与角色组](#架构与语义角色组) · [验证与审计](#验证与模型归因审计) · [卸载回滚](#撤回--卸载)
 
 </div>
 
@@ -21,7 +22,7 @@
 
 ```mermaid
 flowchart TB
-    U["用户<br/>意图对齐与架构审批"] <--> L1["L1 沟通中枢 (主会话)<br/>group/role-communicator<br/>上下文策展 · 方案转译 · 状态编排"]
+    U["用户<br/>意图对齐与架构审批"] <--> L1["L1 沟通中枢<br/>Claude Code (group/role-communicator)<br/>或 Antigravity / 任意 Agent (Skill + MCP)"]
 
     L1 --> L2["L2 架构师 (严格只读)<br/>group/role-architect<br/>第一性原理 vs 务实双方案蓝图"]
     L1 --> L3["L3 拆解与审查 (只读 + 测试)<br/>group/role-supervisor<br/>原子任务图 · 独立运行测试与审查"]
@@ -66,12 +67,14 @@ $ ./bin/orchestra-audit --since '2026-11-23T00:00:00Z'
 - **声音隔离（"Thinker Thinks, Communicator Speaks"）**：L2 架构师严格只读，只产出**激进第一性原理 vs 稳健务实**双方案蓝图；L1 负责落盘并转译成直指本质的人话，补充独立的工程批判，**经人明确批准后才允许改代码**。
 - **写审分离与有界收敛**：Worker 只能在 `allowed_files` 范围内改动并运行 `verification_cmd`；L3 审查者拥有 `Read` + `Bash` 独立跑测权限但**没有文件写入工具**，单任务修订硬性封顶 **2 轮**。
 - **角色与模型彻底解耦**：所有子代理、技能与命令只绑定语义角色组（`group/role-*`），不写死任何具体厂商或模型名。换模型、改回退链、配时段规则全在网关层完成，编排层零改动。
+- **全面 Skill 化与 L1 宿主解耦（`SKILL.md` + 本地 MCP）**：整套 6 档位编排协议已沉淀为跨宿主 `SKILL.md`，并通过零依赖本地 stdio MCP（`bin/commlaude-mcp`）对外暴露 4 个 Claude Code 子代理。你可以直接把 **Antigravity**（原生 Gemini 4 Neon）、Cursor、Codex 或任何支持 Skill/MCP 的 Agent 当作 L1 沟通中枢，同时保留全部 L2–L4 在隔离的 Claude Code + Magpie 里执行。
 
 ### 对比一览
 
 | 维度 | 单模型 Claude Code | 手写零散子代理 | `commlaude` |
 | --- | :---: | :---: | :---: |
 | 沟通 / 架构 / 审查 / 快速编码 / 深度批量分工 | 无 | 手动切换 | **6 个语义 `group/role-*` 路由组** |
+| 跨宿主 L1（在 Antigravity / Cursor / Codex 等任意 Agent 中使用） | 无 | 无 | **跨平台 Skill + `bin/commlaude-mcp`** |
 | 架构师只读 + 写代码前人工审批闸门 | 无 | 靠提示词自觉 | **工具权限 + 流程双约束** |
 | 独立测试审查且禁止直接改代码 | 无 | 少见 | **强制隔离（`Read/Grep/Glob/Bash`）** |
 | 原生并行批量研究/精读（`Agent` 波次而非后台 shell） | 手动 | 自行写脚本 | **`/smarter` + `smart-worker`** |
@@ -99,7 +102,7 @@ git clone https://github.com/zhubaodian1027/commlaude.git && cd commlaude
 正常校验输出：
 
 ```text
-OK: 21 required files, agent routing, tool restrictions, and script syntax verified.
+OK: 23 required files, agent routing, tool restrictions, and script syntax verified.
 Isolated config: <repo>/.claude
 Live Magpie routing is checked separately by scripts/routing_smoke_test.sh.
 ```
@@ -172,6 +175,49 @@ ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
 ├── 03-reports/          # L4 各任务执行与验证证据
 └── 04-review.md         # L3 独立测试与逐轮审查结论
 ```
+
+---
+
+## 在任意 Agent 中使用（Skill + MCP）
+
+`commlaude` 现已**全面 Skill 化**：6 档位编排协议被抽离为跨宿主 `SKILL.md`，4 个隔离 Claude Code 子代理通过零依赖本地 stdio MCP（[`bin/commlaude-mcp`](./bin/commlaude-mcp)）统一对外暴露。
+
+这意味着 **L1 沟通中枢不再绑定 Claude Code**——你可以在 **Antigravity**（原生跑 Gemini 4 Neon）、Cursor、Codex 或任何支持 Skill + MCP 的 Agent 中直接使用整套 `commlaude` 协作流，同时 L2–L4 依然享受隔离 Claude Code 的文件/终端工具链、严格读写隔离、`worktree` 并发与 Magpie `group/role-*` 语义路由。
+
+### 1. 注册本地 MCP Server
+
+将 `bin/commlaude-mcp` 加入客户端的 MCP 配置（Antigravity 位于 `~/.gemini/config/mcp_config.json`）：
+
+```json
+{
+  "mcpServers": {
+    "commlaude": {
+      "command": "/path/to/commlaude/bin/commlaude-mcp"
+    }
+  }
+}
+```
+
+### 2. 安装跨宿主编排 Skill
+
+将 [`integrations/antigravity/skills/commlaude`](./integrations/antigravity/skills/commlaude/SKILL.md) 软链进对应 Agent 的 skills 目录（Antigravity 位于 `~/.gemini/config/skills/`）：
+
+```bash
+ln -sfn /path/to/commlaude/integrations/antigravity/skills/commlaude ~/.gemini/config/skills/commlaude
+```
+
+### 暴露的 4 个 MCP 工具
+
+全部工具均支持多线程真并发波次、指定项目目录 `cwd`、通过 `session_id` 无缝 `--resume` 续传，并在 CLI 层强制锁定权限边界：
+
+| MCP 工具 | 底层子代理与路由组 | 权限边界与用途 |
+| --- | --- | --- |
+| `ask_astra` | `astra-architect`（`group/role-architect`） | 严格只读（禁用 `Edit/Write/MultiEdit/NotebookEdit/Bash`） |
+| `run_supervisor` | `kimi-supervisor`（`group/role-supervisor`） | 只读 + 安全 `Bash` 验证；默认 `mode="REVIEW"`，支持 `mode="DECOMPOSE"` |
+| `run_worker` | `worker`（`group/role-worker-code`） | 支持 `mode="execution"` 或严格只读 `mode="scout"`，可选 `worktree: true` |
+| `run_smart_worker` | `smart-worker`（`group/role-smart-worker`，`effort=high`） | 批量论文精读、文献综述与深度写作，可选 `worktree: true` |
+
+可选环境变量：`COMMLAUDE_MCP_TIMEOUT`（默认 `600` 秒）、`COMMLAUDE_MCP_PERMISSION_MODE`（默认 `auto`，仅用于可写 Worker）。
 
 ---
 

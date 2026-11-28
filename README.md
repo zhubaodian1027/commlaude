@@ -2,18 +2,19 @@
 
 # commlaude
 
-**A directory-isolated, communication-first multi-model orchestration layer for Claude Code.**
+**A directory-isolated, Skill-ified Communication-First multi-model orchestration layer — run natively in Claude Code or plug into Antigravity, Cursor, Codex, or any MCP/Skill-capable agent.**
 
-Route conversational coordination, read-only architecture, independent review, fast execution, parallel deep research, and Auto Mode classification to separate model groups — without touching `~/.claude` or existing Magpie bindings.
+Route conversational coordination, read-only architecture, independent review, fast execution, parallel deep research, and Auto Mode classification to separate model groups — without touching `~/.claude` or existing Magpie bindings. Through its portable `SKILL.md` and zero-dependency local stdio MCP (`bin/commlaude-mcp`), L1 is completely decoupled from Claude Code while L2–L4 subagents keep running on isolated Claude Code + Magpie.
 
 [![GitHub Stars](https://img.shields.io/github/stars/zhubaodian1027/commlaude?style=flat)](https://github.com/zhubaodian1027/commlaude/stargazers)
 ![Claude Code](https://img.shields.io/badge/Claude%20Code-CLI-111827?style=flat)
+![Skill + MCP](https://img.shields.io/badge/Skill%20%2B%20MCP-Antigravity%20%7C%20Any%20Agent-7c3aed?style=flat)
 ![Dependencies](https://img.shields.io/badge/Python-stdlib%20only-2563eb?style=flat)
 ![Isolation](https://img.shields.io/badge/Config-Directory%20Isolated-059669?style=flat)
 
 **English** · [简体中文](./README_zh.md)
 
-[Quickstart](#60-second-quickstart) · [Why commlaude](#why-commlaude) · [Entry Points](#six-entry-points) · [Architecture](#architecture--role-groups) · [Verification](#verification--attribution) · [Uninstall](#uninstall--rollback)
+[Quickstart](#60-second-quickstart) · [Why commlaude](#why-commlaude) · [Entry Points](#six-entry-points) · [Use in Any Agent](#use-in-any-agent-skill--mcp) · [Architecture](#architecture--role-groups) · [Verification](#verification--attribution) · [Uninstall](#uninstall--rollback)
 
 </div>
 
@@ -21,7 +22,7 @@ Route conversational coordination, read-only architecture, independent review, f
 
 ```mermaid
 flowchart TB
-    U["User<br/>alignment & architecture approval"] <--> L1["L1 Communicator & Hub (main session)<br/>group/role-communicator<br/>context curation · translation · state machine"]
+    U["User<br/>alignment & architecture approval"] <--> L1["L1 Communicator & Hub<br/>Claude Code (group/role-communicator)<br/>or Antigravity / Any Agent (Skill + MCP)"]
 
     L1 --> L2["L2 Architect (read-only)<br/>group/role-architect<br/>first-principles vs. pragmatic blueprint"]
     L1 --> L3["L3 Supervisor (read + test)<br/>group/role-supervisor<br/>task graph · independent review"]
@@ -66,12 +67,14 @@ To make that practical without sacrificing architectural rigor or safety, `comml
 - **Voice Isolation ("Thinker Thinks, Communicator Speaks")**: L2 Architect is strictly read-only and outputs raw **Bold/First-Principles vs. Pragmatic** blueprints. L1 translates them into plain trade-offs, adds an independent engineering critique, and waits for explicit human approval before any code is written.
 - **Write/Review Separation & Bounded Loops**: Workers edit only `allowed_files` and must run `verification_cmd`. L3 Supervisor has `Read` + `Bash` to run tests independently, has no `Write`/`Edit` tools, and caps revision loops at **2 rounds per task packet**.
 - **Model-Agnostic Routing**: Zero vendor or model names are hardcoded in agents, skills, or commands. Every role binds to `group/role-*`; swap models, adjust fallback chains, or apply schedules at the gateway layer without editing prompts.
+- **Skill-ified & Host-Agnostic L1 (`SKILL.md` + Local MCP)**: Because orchestration workflows are pure skills and subagents are exposed via a zero-dependency local stdio MCP (`bin/commlaude-mcp`), `commlaude` is no longer tied to Claude Code as the main chat. Use **Antigravity** (native Gemini 4 Neon), Cursor, Codex, or any Skill/MCP-capable agent as L1 while keeping L2–L4 running in isolated Claude Code + Magpie.
 
 ### How it compares
 
 | Capability | Single-Model Claude Code | Ad-Hoc Subagent Prompts | `commlaude` |
 | --- | :---: | :---: | :---: |
 | Separate models for comm, architecture, review, fast code & deep batch work | No | Manual | **6 semantic `group/role-*` groups** |
+| Host-agnostic L1 (Antigravity, Cursor, Codex, or any MCP/Skill agent) | No | No | **Portable Skill + `bin/commlaude-mcp`** |
 | Read-only architect + human approval gate before edits | No | Prompt-only | **Enforced tool & workflow gate** |
 | Independent reviewer with test execution and no file-write tools | No | Rarely | **Enforced (`Read/Grep/Glob/Bash`)** |
 | Native parallel batch research/writing (`Agent` waves, not shell scripts) | Manual | Ad-hoc | **`/smarter` + `smart-worker`** |
@@ -99,7 +102,7 @@ git clone https://github.com/zhubaodian1027/commlaude.git && cd commlaude
 Expected verification output:
 
 ```text
-OK: 21 required files, agent routing, tool restrictions, and script syntax verified.
+OK: 23 required files, agent routing, tool restrictions, and script syntax verified.
 Isolated config: <repo>/.claude
 Live Magpie routing is checked separately by scripts/routing_smoke_test.sh.
 ```
@@ -172,6 +175,49 @@ Multi-step runs persist auditable artifacts in the target project's `.orchestra/
 ├── 03-reports/          # L4 per-packet execution & verification reports
 └── 04-review.md         # L3 independent test runs & per-round verdicts
 ```
+
+---
+
+## Use in Any Agent (Skill + MCP)
+
+`commlaude` is **fully Skill-ified**: its 6 orchestration workflows live as a portable `SKILL.md`, and its 4 isolated Claude Code subagents are exposed through a zero-dependency local stdio MCP server ([`bin/commlaude-mcp`](./bin/commlaude-mcp)).
+
+That means you can decouple the **L1 communicator host** completely — run **Antigravity** (with native Gemini 4 Neon), Cursor, Codex, or any MCP/Skill-capable agent in the driver's seat, while keeping all L2–L4 execution, tool-permission isolation, worktrees, and Magpie `group/role-*` routing inside Claude Code.
+
+### 1. Register the local MCP server
+
+Add `bin/commlaude-mcp` to your agent's MCP config (for Antigravity: `~/.gemini/config/mcp_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "commlaude": {
+      "command": "/path/to/commlaude/bin/commlaude-mcp"
+    }
+  }
+}
+```
+
+### 2. Install the portable orchestration Skill
+
+Symlink [`integrations/antigravity/skills/commlaude`](./integrations/antigravity/skills/commlaude/SKILL.md) into your agent's skills directory (for Antigravity: `~/.gemini/config/skills/`):
+
+```bash
+ln -sfn /path/to/commlaude/integrations/antigravity/skills/commlaude ~/.gemini/config/skills/commlaude
+```
+
+### Exposed MCP Tools
+
+All four tools run concurrently (supporting parallel waves), accept `cwd` and `session_id` (`--resume`), and enforce strict CLI-level tool boundaries:
+
+| MCP Tool | Underlying Agent & Route | Tool Boundary & Usage |
+| --- | --- | --- |
+| `ask_astra` | `astra-architect` (`group/role-architect`) | Strictly read-only (`Edit/Write/MultiEdit/NotebookEdit/Bash` disallowed) |
+| `run_supervisor` | `kimi-supervisor` (`group/role-supervisor`) | Read-only + safe `Bash`; defaults to `mode="REVIEW"`, supports `mode="DECOMPOSE"` |
+| `run_worker` | `worker` (`group/role-worker-code`) | `mode="execution"` or read-only `mode="scout"`; optional `worktree: true` |
+| `run_smart_worker` | `smart-worker` (`group/role-smart-worker`, `effort=high`) | Deep reading, synthesis & writing; optional `worktree: true` |
+
+Optional env vars: `COMMLAUDE_MCP_TIMEOUT` (default `600`), `COMMLAUDE_MCP_PERMISSION_MODE` (default `auto`, writable workers only).
 
 ---
 
