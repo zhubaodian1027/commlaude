@@ -1,6 +1,6 @@
 # Verification Log
 
-> Entry points were renamed after the initial functional tests: `/council` → `/astra`, `/delegate` → `/kimi`, and `/orchestra` → `/commlaude`. A direct `/worker` path was added at the same time, L4 fast workers were consolidated into `worker` on `group/role-worker-code` (removing `role-worker-long`), and a high-reasoning `smart-worker` (`group/role-smart-worker`) with `/smarter` was later added for batch creative and analytical work. Historical headings below refer to the names used during the original tests.
+> Entry points were renamed after the initial functional tests: `/council` → `/astra`, `/delegate` → `/kimi`, and `/orchestra` → `/commlaude`. A direct `/worker` path was added at the same time, L4 fast workers were consolidated into `worker` on `group/role-worker-code` (removing `role-worker-long`), a high-reasoning `smart-worker` (`group/role-smart-worker`) with `/smarter` was later added for batch creative and analytical work, and `/reviewer` was added as a standalone read-only single-hop review entry reusing `kimi-supervisor` (`MODE: REVIEW`). Historical headings below refer to the names used during the original tests.
 
 ## Static and bootstrap checks
 

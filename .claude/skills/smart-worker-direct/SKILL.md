@@ -7,7 +7,7 @@ description: Direct high-reasoning single or parallel batch dispatch to smart-wo
 
 Use `smart-worker` (bound to `group/role-smart-worker`) for creative, judgment-heavy, or batch research and synthesis tasks — such as deep paper reading, literature reviews, structured technical writing, comparative analysis, or nuanced content generation — where higher reasoning quality matters more than lowest-cost mechanical execution.
 
-Neon remains the sole coordinator at depth 1 and dispatches native `Agent` calls directly (so tasks appear and track cleanly as native subagents rather than background `claude -p` shell scripts). For mechanical code edits or quick read-only scouting, use `/worker`; for multi-file software engineering that requires independent code review or architecture approval, use `/kimi` or `/commlaude`.
+Neon remains the sole coordinator at depth 1 and dispatches native `Agent` calls directly (so tasks appear and track cleanly as native subagents rather than background `claude -p` shell scripts). For mechanical code edits or quick read-only scouting, use `/worker`; for standalone read-only review, use `/reviewer`; for multi-file software engineering that requires independent code review or architecture approval, use `/kimi` or `/commlaude`.
 
 1. **Frame & Scope**: Confirm the goal, per-item inputs, exact output paths (`allowed_files`), quality rubric or project standard (such as a project's `CLAUDE.md`), and any verification checks. Ask a concise question only when ambiguity materially affects structure, scope, or safety.
 2. **Partition & Dispatch in Parallel Waves**:

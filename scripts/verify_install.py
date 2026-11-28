@@ -19,6 +19,7 @@ AGENTS = {
 COMMANDS = {
     "commlaude": ("astra-architect", "kimi-supervisor", "worker", "smart-worker"),
     "astra": ("astra-architect",),
+    "reviewer": ("kimi-supervisor",),
     "kimi": ("kimi-supervisor", "worker", "smart-worker"),
     "worker": ("worker",),
     "smarter": ("smart-worker",),
@@ -30,10 +31,12 @@ REQUIRED = [
     ROOT / ".claude/skills/model-orchestra/scripts/audit_run.py",
     ROOT / ".claude/skills/astra-council/SKILL.md",
     ROOT / ".claude/skills/fast-delegate/SKILL.md",
+    ROOT / ".claude/skills/reviewer-direct/SKILL.md",
     ROOT / ".claude/skills/worker-direct/SKILL.md",
     ROOT / ".claude/skills/smart-worker-direct/SKILL.md",
     ROOT / ".claude/commands/commlaude.md",
     ROOT / ".claude/commands/astra.md",
+    ROOT / ".claude/commands/reviewer.md",
     ROOT / ".claude/commands/kimi.md",
     ROOT / ".claude/commands/worker.md",
     ROOT / ".claude/commands/smarter.md",
@@ -100,6 +103,7 @@ def main() -> int:
         ("model-orchestra", "model-orchestra"),
         ("astra-council", "astra-council"),
         ("fast-delegate", "fast-delegate"),
+        ("reviewer-direct", "reviewer-direct"),
         ("worker-direct", "worker-direct"),
         ("smart-worker-direct", "smart-worker-direct"),
     ):

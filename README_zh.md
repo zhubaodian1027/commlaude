@@ -13,7 +13,7 @@
 
 [English](./README.md) · **简体中文**
 
-[60 秒上手](#60-秒极速上手) · [为什么做这个](#为什么选择-commlaude) · [五种入口](#五种按需提速入口) · [架构与角色组](#架构与语义角色组) · [验证与审计](#验证与模型归因审计) · [卸载回滚](#撤回--卸载)
+[60 秒上手](#60-秒极速上手) · [为什么做这个](#为什么选择-commlaude) · [六种入口](#六种按需提速入口) · [架构与角色组](#架构与语义角色组) · [验证与审计](#验证与模型归因审计) · [卸载回滚](#撤回--卸载)
 
 </div>
 
@@ -60,7 +60,7 @@ $ ./bin/orchestra-audit --since '2026-11-23T00:00:00Z'
 
 于是我开发了这套 **Communication-First** 模式：把最会沟通、办事利落、讲人话的模型放在主会话当总控中枢，把顶级推理模型请到幕后专注架构决策与独立审查，同时用 `group/role-*` 将角色与具体模型彻底解耦——哪怕某代模型后训练变味，也只需在路由层换人，工作流本身不受影响。
 
-为了在保留深度推理与工程严谨性的前提下落地这套模式，`commlaude` 将协作拆分为 **6 个语义角色组** 与 **5 个按需命令档位**：
+为了在保留深度推理与工程严谨性的前提下落地这套模式，`commlaude` 将协作拆分为 **6 个语义角色组** 与 **6 个按需命令档位**：
 
 - **Communication-First 单中枢扁平编排**：Claude Code 子代理不能递归派生子代理，L1 主会话天然作为唯一状态机——提炼精简的 `00-brief.md`、按拓扑波次并行派发任务，不把整仓噪音倾倒给深度推理角色。
 - **声音隔离（"Thinker Thinks, Communicator Speaks"）**：L2 架构师严格只读，只产出**激进第一性原理 vs 稳健务实**双方案蓝图；L1 负责落盘并转译成直指本质的人话，补充独立的工程批判，**经人明确批准后才允许改代码**。
@@ -99,7 +99,7 @@ git clone https://github.com/zhubaodian1027/commlaude.git && cd commlaude
 正常校验输出：
 
 ```text
-OK: 19 required files, agent routing, tool restrictions, and script syntax verified.
+OK: 21 required files, agent routing, tool restrictions, and script syntax verified.
 Isolated config: <repo>/.claude
 Live Magpie routing is checked separately by scripts/routing_smoke_test.sh.
 ```
@@ -149,16 +149,17 @@ ROLE_AUTO_MODE_MODELS="<primary>,<fallback>" \
 
 ---
 
-## 五种按需提速入口
+## 六种按需提速入口
 
 按任务复杂度选择最轻的合适档位，避免小事走重流程，也避免大事缺少设计把关：
 
 | 入口 | 协作路径 | 适用场景 | 关键约束 |
 | --- | --- | --- | --- |
 | `/astra <问题>` | `User ↔ L1 ↔ L2` | 架构讨论、难题诊断、第一性原理权衡 | 严格只读，不改代码 |
+| `/reviewer <审查对象>` | `User ↔ L1 → L3` | 对代码、diff、commit/PR、测试或文档进行独立只读审查 | 直接单跳调用 `kimi-supervisor`（`MODE: REVIEW`），严格只读 + 安全验证，**不拆任务也不派发 Worker** |
 | `/worker <小型明确任务>` | `User ↔ L1 → 单 L4a` | 边界清晰的改代码/修 Bug、补测试、改文档或只读侦察 | 走 `worker`（默认可读写 `Execution Mode`，侦察走只读 `Scout Mode`），**无独立审查** |
 | `/smarter <批量/创造性任务>` | `User ↔ L1 → 并行 L4b` | 批量论文精读、文献综述、深度调研写作、复杂分析 | 原生 `Agent` 分波次并行派发 `smart-worker`（`effort=high`，互不重叠的 `allowed_files`），**无独立 Kimi 审查** |
-| `/kimi <明确任务>` | `User ↔ L1 → L3 → L4 → L3` | 设计已清楚的功能实现、缺陷修复、范围重构 | 跳过架构审批，保留独立测试与审查 |
+| `/kimi <明确任务>` | `User ↔ L1 → L3 → L4 → L3` | 设计已清楚的功能实现、缺陷修复、范围重构 | 跳过架构审批，保留独立测试与审查（纯只读审查请求自动直达 `MODE: REVIEW`） |
 | `/commlaude <复杂任务>` | `User ↔ L1 ↔ L2 → [审批] → L3 ↔ L4` | 复杂特性、大型重构、方案不确定的研发任务 | **架构经人明确批准后才写代码**，单任务最多 2 轮修订 |
 
 多步编排会在目标项目的 `.orchestra/` 目录沉淀完整可追踪产物：
@@ -230,7 +231,7 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 - 清除继承的 `CLAUDE_CODE_SUBAGENT_MODEL`、`ANTHROPIC_MODEL` 等全局路由覆盖，防止干扰子代理路由；
 - 将 Auto Mode 分类器（`CLAUDE_CODE_AUTO_MODE_MODEL`、`CLAUDE_CODE_AUTO_MODE_SERVER=0`）与会话标题、工具折叠摘要、子代理命名等轻量辅助请求（`ANTHROPIC_SMALL_FAST_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`）统一锁定到 `group/role-auto-mode`；
 - 默认关闭子代理每 30 秒一次的全量上下文后台进度摘要（`CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=1`），避免高推理子代理为生成 3–5 个词的状态标签反复消耗推理配额；
-- 以软链接方式自动桥接全局 `~/.claude/skills/` 中的个人 Skill（不覆盖内置 5 个编排 Skill，失效软链接自动清理，且被 `.gitignore` 排除）。
+- 以软链接方式自动桥接全局 `~/.claude/skills/` 中的个人 Skill（不覆盖内置 6 个编排 Skill，失效软链接自动清理，且被 `.gitignore` 排除）。
 
 可选启动环境变量：
 - `ORCHESTRA_MAIN_MODEL`：默认 `group/role-communicator`

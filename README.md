@@ -13,7 +13,7 @@ Route conversational coordination, read-only architecture, independent review, f
 
 **English** · [简体中文](./README_zh.md)
 
-[Quickstart](#60-second-quickstart) · [Why commlaude](#why-commlaude) · [Entry Points](#five-entry-points) · [Architecture](#architecture--role-groups) · [Verification](#verification--attribution) · [Uninstall](#uninstall--rollback)
+[Quickstart](#60-second-quickstart) · [Why commlaude](#why-commlaude) · [Entry Points](#six-entry-points) · [Architecture](#architecture--role-groups) · [Verification](#verification--attribution) · [Uninstall](#uninstall--rollback)
 
 </div>
 
@@ -60,7 +60,7 @@ That experience led to a simple conclusion: **in interactive workflows, a model'
 
 `commlaude` flips the conventional subagent pattern into a **Communication-First** workflow: put the clearest communicator in the driver's seat as the main hub, call frontier reasoning models behind the scenes strictly for high-leverage thinking and review, and keep every role bound to a semantic `group/role-*` route so a post-training regression never forces you to rewrite your setup.
 
-To make that practical without sacrificing architectural rigor or safety, `commlaude` separates concerns into **6 semantic routing groups** and **5 command speeds** with strict boundaries:
+To make that practical without sacrificing architectural rigor or safety, `commlaude` separates concerns into **6 semantic routing groups** and **6 command speeds** with strict boundaries:
 
 - **Communication-First Hub (Depth-1 Flat Orchestration)**: Claude Code subagents cannot spawn sub-subagents. L1 stays the sole coordinator — curating concise briefs (`00-brief.md`), dispatching independent tasks in parallel waves, and keeping context clean.
 - **Voice Isolation ("Thinker Thinks, Communicator Speaks")**: L2 Architect is strictly read-only and outputs raw **Bold/First-Principles vs. Pragmatic** blueprints. L1 translates them into plain trade-offs, adds an independent engineering critique, and waits for explicit human approval before any code is written.
@@ -99,7 +99,7 @@ git clone https://github.com/zhubaodian1027/commlaude.git && cd commlaude
 Expected verification output:
 
 ```text
-OK: 19 required files, agent routing, tool restrictions, and script syntax verified.
+OK: 21 required files, agent routing, tool restrictions, and script syntax verified.
 Isolated config: <repo>/.claude
 Live Magpie routing is checked separately by scripts/routing_smoke_test.sh.
 ```
@@ -149,16 +149,17 @@ Safety checks built into `setup-magpie.sh`:
 
 ---
 
-## Five Entry Points
+## Six Entry Points
 
 Pick the lowest-ceremony command that matches task risk:
 
 | Command | Path | Best For | Guardrails |
 | --- | --- | --- | --- |
 | `/astra <question>` | `User ↔ L1 ↔ L2` | Architecture design, hard debugging, first-principles trade-offs | Strictly read-only; no code edits |
+| `/reviewer <target>` | `User ↔ L1 → L3` | Standalone independent review of code, diffs, commits/PRs, tests, or documents | Reuses `kimi-supervisor` directly in `MODE: REVIEW`; strictly read-only + safe verification, **no decomposition or worker dispatch** |
 | `/worker <small task>` | `User ↔ L1 → L4a` | Clear single-packet edits, bug fixes, tests, docs, or read-only scouting | Runs `worker` (`Execution Mode` by default, `Scout Mode` read-only); **no independent review** |
 | `/smarter <batch/creative task>` | `User ↔ L1 → parallel L4b` | Deep paper reading, literature synthesis, research writing, complex batch analysis | Dispatches native parallel `Agent` waves via `smart-worker` (`effort=high`, disjoint `allowed_files`); **no Kimi code-review loop** |
-| `/kimi <clear task>` | `User ↔ L1 → L3 → L4 → L3` | Well-defined feature implementation, scoped refactors, multi-file fixes | Skips architecture gate; keeps independent test execution and review |
+| `/kimi <clear task>` | `User ↔ L1 → L3 → L4 → L3` | Well-defined feature implementation, scoped refactors, multi-file fixes | Skips architecture gate; keeps independent test execution and review (pure read-only review requests short-circuit directly to `MODE: REVIEW`) |
 | `/commlaude <complex task>` | `User ↔ L1 ↔ L2 → [Approval] → L3 ↔ L4` | Ambiguous features, large refactors, research-to-code work | **Human must approve blueprint before edits**; max 2 revision rounds per packet |
 
 Multi-step runs persist auditable artifacts in the target project's `.orchestra/` directory:
@@ -230,7 +231,7 @@ python3 -I -m unittest discover -s ./tests -p 'test_*.py'
 - Unsets inherited `CLAUDE_CODE_SUBAGENT_MODEL`, `ANTHROPIC_MODEL`, and global model overrides so subagent routing stays isolated.
 - Pins Auto Mode classification (`CLAUDE_CODE_AUTO_MODE_MODEL`, `CLAUDE_CODE_AUTO_MODE_SERVER=0`) and lightweight auxiliary helper calls (`ANTHROPIC_SMALL_FAST_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`) to `group/role-auto-mode`.
 - Disables periodic 30-second background subagent progress summary forks (`CLAUDE_CODE_DISABLE_AGENT_PROGRESS_SUMMARIES=1`) so high-reasoning subagents do not spend full-context calls generating 3–5 word UI labels.
-- Automatically symlinks global user skills from `~/.claude/skills/` into `.claude/skills/` (never overriding the 5 built-in skills, pruning stale links automatically, and kept gitignored).
+- Automatically symlinks global user skills from `~/.claude/skills/` into `.claude/skills/` (never overriding the 6 built-in skills, pruning stale links automatically, and kept gitignored).
 
 Optional overrides at launch time:
 - `ORCHESTRA_MAIN_MODEL` (default: `group/role-communicator`)

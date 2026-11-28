@@ -16,6 +16,7 @@ backups/
 !.claude/skills/model-orchestra/
 !.claude/skills/astra-council/
 !.claude/skills/fast-delegate/
+!.claude/skills/reviewer-direct/
 !.claude/skills/worker-direct/
 !.claude/skills/smart-worker-direct/
 

@@ -5,7 +5,7 @@ description: Fast three-tier coding workflow (Neon, Kimi Supervisor, Worker) for
 
 # Fast Delegate
 
-Use this only when the desired behavior and design are already clear. For architectural ambiguity or a broad feature, use `/commlaude` instead. Neon is the sole orchestrator; subagents never delegate further.
+Use this only when the desired behavior and design are already clear and edits/execution are needed. If the user only asks for a read-only review or audit without edits, skip Frame/Decompose/Execute and invoke `kimi-supervisor` directly in `MODE: REVIEW` (same as `/reviewer`) without dispatching `worker` or `smart-worker`. For architectural ambiguity or a broad feature, use `/commlaude` instead. Neon is the sole orchestrator; subagents never delegate further.
 
 1. **Frame**: Create `.orchestra/<run-id>/00-brief.md` with scope, constraints, and acceptance criteria. Read `../model-orchestra/references/schemas.md` for artifact formats.
 2. **Decompose**: Invoke `kimi-supervisor` with `MODE: DECOMPOSE`. Explain that no Astra blueprint exists and the clear brief is authoritative. Save `02-tasks.json` and validate task scope, dependencies, and verification commands.

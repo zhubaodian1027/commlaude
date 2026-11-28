@@ -11,7 +11,7 @@ description: Fast two-model thinking workflow (User, Neon, Astra) for natural-la
    - **核心结论（说人话版）**
    - **Astra 的高价值洞见 / 突破点**
    - **Neon 补充视角** — identify excessive conservatism, abstraction, or ignored engineering experience.
-   - **下一步建议** — state whether a small task fits `/worker`, a clear implementation needs `/kimi`, the design justifies `/commlaude`, or no further workflow is needed.
+   - **下一步建议** — state whether a small task fits `/worker`, standalone read-only verification fits `/reviewer`, a clear implementation needs `/kimi`, the design justifies `/commlaude`, or no further workflow is needed.
 4. Preserve exact formulas, proofs, and code when precision matters. Show longer raw Astra excerpts only when the user asks.
 
 Do not create worker tasks or modify production files in this workflow.
